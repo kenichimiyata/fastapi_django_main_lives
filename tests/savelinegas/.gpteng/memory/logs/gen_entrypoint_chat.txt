@@ -1,0 +1,309 @@
+
+2024-06-10T15:16:30.370367
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Code.gs
+1 function doPost(e) {
+2   var lineWebhook = new LineWebhook(e);
+3   lineWebhook.handleRequest();
+4 }
+
+File: LineWebhook.gs
+1 class LineWebhook {
+2   /**
+3    * Handles a LINE Webhook request.
+4    * @param {Object} e The event object from the LINE Webhook request.
+5    */
+6   handleRequest(e) {
+7     var events = e.events;
+8     for (var i = 0; i < events.length; i++) {
+9       var event = events[i];
+10       if (event.type == 'message' && event.message.type == 'image') {
+11         var imageData = event.message.contentProvider.previewImageUrl;
+12         var imageSaver = new ImageSaver();
+13         imageSaver.saveImage(imageData);
+14       }
+15     }
+16   }
+17 }
+
+File: ImageSaver.gs
+1 class ImageSaver {
+2   /**
+3    * Saves an image to Google Drive.
+4    * @param {String} imageData The URL of the image data.
+5    */
+6   saveImage(imageData) {
+7     var response = UrlFetchApp.fetch(imageData);
+8     var blob = response.getBlob();
+9     var folder = DriveApp.getFolderById('YOUR_FOLDER_ID'); // Replace with your folder ID
+10     var file = folder.createFile(blob);
+11     Logger.log('Image saved to Google Drive: %s', file.getUrl());
+12   }
+13 }
+
+File: appsscript.json
+1 {
+2   "timeZone": "Asia/Tokyo",
+3   "dependencies": {
+4     "enabledAdvancedServices": []
+5   },
+6   "webapp": {
+7     "executeAs": "USER_DEPLOYING",
+8     "whoHasAccess": "ANYONE_ANONYMOUS"
+9   }
+10 }
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+clasp login
+clasp create .
+
+# Run the codebase
+clasp push
+clasp deploy -i 0
+clasp webapp -p 8080
+```
+Note: This script assumes you have the `clasp` command-line tool installed and configured to work with your Google Apps Script project.
+
+2024-06-10T15:18:43.346796
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 LineImageGetter
+2 ┣━ Code
+3 ┃   ┣━ LineImageGetter.gs
+4 ┃   ┣━ ImageSaver.gs
+5 ┃   ┣━ SequenceDiagram.gs
+6 ┃   ┣━ FolderTree.gs
+7 ┃   ┗━ README.md
+8 ┣━ resources
+9 ┃   ┗━ sequence.puml
+10 ┣━ LICENSE
+11 ┗━ README.md
+
+File: Code/LineImageGetter.gs
+1 /**
+2  * Retrieves image data from LINE and returns it as a blob.
+3  * @return {Blob} Image data as a blob.
+4  */
+5 function getLineImageData() {
+6   var options = {
+7     "method": "GET",
+8     "headers": {
+9       "Authorization": "Bearer YOUR_LINE_API_TOKEN"
+10     }
+11   };
+12   
+13   var response = UrlFetch.fetch("https://api.line.me/v2/profile/picture", options);
+14   var imageData = response.getContentText();
+15   var blob = Utilities.newBlob(imageData, "image/jpeg");
+16   return blob;
+17 }
+
+File: Code/ImageSaver.gs
+1 /**
+2  * Saves the image data to Google Drive.
+3  * @param {Blob} imageData Image data as a blob.
+4  */
+5 function saveImageToDrive(imageData) {
+6   var folder = DriveApp.getFolderById("YOUR_GOOGLE_DRIVE_FOLDER_ID");
+7   var file = folder.createFile(imageData);
+8   Logger.log("Image saved to Google Drive: " + file.getUrl());
+9 }
+
+File: Code/SequenceDiagram.gs
+1 /**
+2  * Generates a sequence diagram using PlantUML.
+3  */
+4 function generateSequenceDiagram() {
+5   var plantUmlCode = "@startuml\n" +
+6                      "participant Line as L\n" +
+7                      "participant Google Apps Script as G\n" +
+8                      "L->>G: Get image data\n" +
+9                      "G->>L: Return image data\n" +
+10                      "G->>Drive: Save image to Drive\n" +
+11                      "@enduml";
+12   
+13   var plantUmlService = getPlantUmlService();
+14   var diagram = plantUmlService.generateDiagram(plantUmlCode);
+15   var blob = Utilities.newBlob(diagram, "image/png");
+16   DriveApp.getFolderById("YOUR_GOOGLE_DRIVE_FOLDER_ID").createFile(blob).setName("sequence_diagram.png");
+17 }
+18 
+19 /**
+20  * Returns a PlantUML service instance.
+21  * @return {PlantUmlService} PlantUML service instance.
+22  */
+23 function getPlantUmlService() {
+24   var service = OAuth2.createService("plantuml")
+25     .setAuthorizationBaseUrl("https://plantuml.com/")
+26     .setTokenUrl("https://plantuml.com/api/token")
+27     .setClientId("YOUR_PLANTUML_API_KEY")
+28     .setClientSecret("YOUR_PLANTUML_API_SECRET")
+29     .setCallbackFunction("authCallback")
+30     .setPropertyStore(PropertiesService.getUserProperties());
+31   return service;
+32 }
+33 
+34 /**
+35  * OAuth2 callback function.
+36  * @param {Object} request OAuth2 request object.
+37  */
+38 function authCallback(request) {
+39   var service = getPlantUmlService();
+40   var authorized = service.handleCallback(request);
+41   if (authorized) {
+42     return HtmlService.createHtmlOutput("Authorized!");
+43   } else {
+44     return HtmlService.createHtmlOutput("Access denied.");
+45   }
+46 }
+
+File: Code/FolderTree.gs
+1 /**
+2  * Creates a folder tree in Google Drive.
+3  */
+4 function createFolderTree() {
+5   var rootFolder = DriveApp.getRootFolder();
+6   var folderTree = [
+7     { name: "LineImageGetter", folders: [
+8       { name: "images" },
+9       { name: "sequence_diagrams" }
+10     ]}
+11   ];
+12   
+13   createFolders(rootFolder, folderTree);
+14 }
+15 
+16 /**
+17  * Recursively creates folders in Google Drive.
+18  * @param {Folder} parentFolder Parent folder.
+19  * @param {Array} folderTree Folder tree structure.
+20  */
+21 function createFolders(parentFolder, folderTree) {
+22   folderTree.forEach(function(folder) {
+23     var subFolder = parentFolder.createFolder(folder.name);
+24     if (folder.folders) {
+25       createFolders(subFolder, folder.folders);
+26     }
+27   });
+28 }
+
+File: resources/sequence.puml
+1 @startuml
+2 participant Line as L
+3 participant Google Apps Script as G
+4 L->>G: Get image data
+5 G->>L: Return image data
+6 G->>Drive: Save image to Drive
+7 @enduml
+
+File: README.md
+1 # Line Image Getter
+2 
+3 This Google Apps Script project retrieves image data from LINE and saves it to Google Drive. It also generates a sequence diagram using PlantUML.
+4 
+5 ## Setup
+6 
+7 1. Create a new Google Apps Script project.
+8 2. Create a new folder in Google Drive to store the images and sequence diagrams.
+9 3. Replace `YOUR_LINE_API_TOKEN` with your LINE API token.
+10 4. Replace `YOUR_GOOGLE_DRIVE_FOLDER_ID` with the ID of the folder created in step 2.
+11 5. Replace `YOUR_PLANTUML_API_KEY` and `YOUR_PLANTUML_API_SECRET` with your PlantUML API key and secret.
+12 
+13 ## Usage
+14 
+15 1. Run the `getLineImageData` function to retrieve the image data from LINE.
+16 2. Run the `saveImageToDrive` function to save the image data to Google Drive.
+17 3. Run the `generateSequenceDiagram` function to generate a sequence diagram using PlantUML.
+18 4. Run the `createFolderTree` function to create a folder tree in Google Drive.
+19 
+20 ## License
+21 
+22 This project is licensed under the MIT License.
+
+File: LICENSE
+1 MIT License
+2 
+3 Copyright (c) 2023 [Your Name]
+4 
+5 Permission is hereby granted, free of charge, to any person obtaining a copy
+6 of this software and associated documentation files (the "Software"), to deal
+7 in the Software without restriction, including without limitation the rights
+8 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+9 copies of the Software, and to permit persons to whom the Software is
+10 furnished to do so, subject to the following conditions:
+11 
+12 The above copyright notice and this permission notice shall be included in all
+13 copies or substantial portions of the Software.
+14 
+15 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+16 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+17 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+18 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+19 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+20 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+21 SOFTWARE.
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+npm install google-apps-script
+
+# Run the codebase
+node -e "require('./Code/LineImageGetter.gs').getLineImageData()"
+node -e "require('./Code/ImageSaver.gs').saveImageToDrive()"
+node -e "require('./Code/SequenceDiagram.gs').generateSequenceDiagram()"
+node -e "require('./Code/FolderTree.gs').createFolderTree()"
+```
+Note: This script assumes that you have Node.js installed on your system. Also, you need to replace `YOUR_LINE_API_TOKEN`, `YOUR_GOOGLE_DRIVE_FOLDER_ID`, `YOUR_PLANTUML_API_KEY`, and `YOUR_PLANTUML_API_SECRET` with your actual API tokens and IDs.

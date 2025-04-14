@@ -1,0 +1,192 @@
+
+2024-06-09T20:39:39.569380
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 google-api-python-client
+2 oauth2client
+
+File: appsscript.json
+1 {
+2   "timeZone": "Asia/Tokyo",
+3   "dependencies": {
+4     "enabledAdvancedServices": [
+5       {
+6         "userSymbol": "OAuth2",
+7         "serviceId": "oauth2",
+8         "version": "v2"
+9       }
+10     ]
+11   }
+12 }
+
+File: linebot.gs
+1 /**
+2  * LINE bot main class
+3  */
+4 class LineBot {
+5   /**
+6    * Constructor
+7    * @param {string} channelId
+8    * @param {string} channelSecret
+9    * @param {string} accessToken
+10    */
+11   constructor(channelId, channelSecret, accessToken) {
+12     this.channelId = channelId;
+13     this.channelSecret = channelSecret;
+14     this.accessToken = accessToken;
+15     this.lineApi = 'https://api.line.me/v2/';
+16   }
+17 
+18   /**
+19    * Handle incoming message
+20    * @param {object} event
+21    */
+22   handleMessage(event) {
+23     var message = event.message;
+24     var replyToken = event.replyToken;
+25     var userId = event.source.userId;
+26     var messageText = message.text;
+27 
+28     // Handle message
+29     var response = this.handleMessageText(messageText, userId);
+30     this.replyMessage(replyToken, response);
+31   }
+32 
+33   /**
+34    * Handle message text
+35    * @param {string} messageText
+36    * @param {string} userId
+37    * @return {string}
+38    */
+39   handleMessageText(messageText, userId) {
+40     // Simple echo bot
+41     return messageText;
+42   }
+43 
+44   /**
+45    * Reply message
+46    * @param {string} replyToken
+47    * @param {string} message
+48    */
+49   replyMessage(replyToken, message) {
+50     var options = {
+51       'method': 'POST',
+52       'headers': {
+53         'Authorization': 'Bearer ' + this.accessToken,
+54         'Content-Type': 'application/json'
+55       },
+56       'payload': JSON.stringify({
+57         'replyToken': replyToken,
+58         'messages': [{
+59           'type': 'text',
+60           'text': message
+61         }]
+62       })
+63     };
+64     UrlFetch.fetch(this.lineApi + 'messages/reply', options);
+65   }
+66 }
+
+File: oauth2.gs
+1 /**
+2  * OAuth2 service
+3  */
+4 class OAuth2 {
+5   /**
+6    * Constructor
+7    * @param {string} clientId
+8    * @param {string} clientSecret
+9    */
+10   constructor(clientId, clientSecret) {
+11     this.clientId = clientId;
+12     this.clientSecret = clientSecret;
+13   }
+14 
+15   /**
+16    * Get access token
+17    * @return {string}
+18    */
+19   getAccessToken() {
+20     var service = OAuth2.createService('line-bot')
+21       .setAuthorizationBaseUrl('https://api.line.me/oauth2/v2.1')
+22       .setTokenUrl('https://api.line.me/oauth2/v2.1/token')
+23       .setClientId(this.clientId)
+24       .setClientSecret(this.clientSecret)
+25       .setCallbackFunction('authCallback')
+26       .setPropertyStore(PropertiesService.getUserProperties());
+27     return service.getAccessToken();
+28   }
+29 
+30   /**
+31    * Auth callback
+32    * @param {object} callback
+33    */
+34   authCallback(callback) {
+35     var authorized = callback.authorized;
+36     if (authorized) {
+37       return callback.accessToken;
+38     } else {
+39       var authorizationUrl = callback.authorizationUrl;
+40       Logger.log('Authorization URL: %s', authorizationUrl);
+41     }
+42   }
+43 }
+
+File: index.gs
+1 /**
+2  * Entry point
+3  */
+4 function doGet() {
+5   var channelId = 'YOUR_CHANNEL_ID';
+6   var channelSecret = 'YOUR_CHANNEL_SECRET';
+7   var oauth2 = new OAuth2(channelId, channelSecret);
+8   var accessToken = oauth2.getAccessToken();
+9   var lineBot = new LineBot(channelId, channelSecret, accessToken);
+10 
+11   var event = {
+12     'message': {
+13       'text': 'Hello, World!'
+14     },
+15     'replyToken': 'YOUR_REPLY_TOKEN',
+16     'source': {
+17       'userId': 'YOUR_USER_ID'
+18     }
+19   };
+20   lineBot.handleMessage(event);
+21 }
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the codebase
+google-apps-script --authorization `oauth2.gs` --callback `authCallback` --channelId YOUR_CHANNEL_ID --channelSecret YOUR_CHANNEL_SECRET
+node index.gs
+```
+Note: Replace `YOUR_CHANNEL_ID`, `YOUR_CHANNEL_SECRET`, and `YOUR_REPLY_TOKEN` with your actual values.

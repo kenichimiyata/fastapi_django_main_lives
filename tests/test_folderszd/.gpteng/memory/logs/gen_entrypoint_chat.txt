@@ -1,0 +1,71 @@
+
+2024-06-10T14:11:26.545717
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 gradio
+
+File: gradio_interface.py
+1 import gradio as gr
+2 
+3 class GradioInterface:
+4     def __init__(self):
+5         self.iface = gr.Interface(
+6             fn=self.predict,
+7             inputs="image",
+8             outputs="text",
+9             title="Image Search",
+10             description="Search for images using Google Apps Script"
+11         )
+12 
+13     def predict(self, img):
+14         # Implement image search logic using Google Apps Script
+15         # For demonstration purposes, return a dummy response
+16         return "Image search result"
+17 
+18     def launch(self):
+19         self.iface.launch()
+20 
+21 gradio_interface = GradioInterface()
+22 gradio_interface.launch()
+
+File: main.py
+1 from gradio_interface import GradioInterface
+2 
+3 if __name__ == "__main__":
+4     gradio_interface = GradioInterface()
+5     gradio_interface.launch()
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the codebase
+python main.py
+```

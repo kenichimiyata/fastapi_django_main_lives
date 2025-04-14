@@ -1,0 +1,32 @@
+    1  git clone --depth 1 https://github.com/hiyouga/LLaMA-Factory.git
+    2  cd LLaMA-Factory
+    3  pip install -e .[torch,metrics]
+    4  cd ./LICENSE 
+    5  rm -rf .gig
+    6  rm -rf .git
+    7  cd ..
+    8  git add *
+    9  git commit -m "update"
+   10  git push
+   11  pip install duckdb
+   12  pip install llama-cpp-python
+   13  pip install 'llama-cpp-python[server]'
+   14  pip install 'litellm[proxy]'
+   15  touch testgroq.py
+   16  python testgroq.py 
+   17  git clone https://github.com/gpt-engineer-org/gpt-engineer.git
+   18  export OPENAI_API_BASE="https://api.groq.com/openai/v11"
+   19  export MODEL_NAME="Llama3-70b-8192"
+   21  cd ./gpt-engineer/
+   22  make install
+   23  pip install poetry
+   24  make install
+   25  make run example
+   26  export OPENAI_API_BASE="https://api.groq.com/openai/v1"
+   27  export MODEL_NAME="Llama3-70b-8192"
+   29  make run example
+   30  export MODEL_NAME="Llama3-70b-8192"
+   31  make run example
+   32  export LOCAL_MODEL=true
+   33  make run example
+   34  history > hist.txt

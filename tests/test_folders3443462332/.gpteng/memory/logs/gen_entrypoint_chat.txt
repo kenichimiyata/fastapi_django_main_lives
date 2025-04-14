@@ -1,0 +1,139 @@
+
+2024-06-10T15:46:17.301752
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 cloud_data_analysis_platform/
+2 data/
+3 raw/
+4 processed/
+5 models/
+6 dashboard/
+7 tableau/
+8 lookerstudio/
+9 requirements.txt
+10 main.py
+11 data_loader.py
+12 data_processor.py
+13 model_trainer.py
+14 dashboard_generator.py
+15 __init__.py
+16 README.md
+
+File: requirements.txt
+1 python==3.9.5
+2 pandas==1.3.5
+3 numpy==1.21.2
+4 scikit-learn==1.0.2
+5 tensorflow==2.7.0
+6 tableau-api-lib==0.1.4
+7 looker-sdk==2.1.0
+
+File: main.py
+1 import data_loader
+2 import data_processor
+3 import model_trainer
+4 import dashboard_generator
+5 
+6 def main():
+7     # Load data
+8     data = data_loader.load_data()
+9 
+10     # Process data
+11     processed_data = data_processor.process_data(data)
+12 
+13     # Train model
+14     model = model_trainer.train_model(processed_data)
+15 
+16     # Generate dashboard
+17     dashboard_generator.generate_dashboard(model)
+18 
+19 if __name__ == "__main__":
+20     main()
+
+File: data_loader.py
+1 import pandas as pd
+2 
+3 def load_data():
+4     # Load data from cloud storage (e.g. AWS S3)
+5     data = pd.read_csv("s3://my-bucket/data.csv")
+6     return data
+
+File: data_processor.py
+1 import pandas as pd
+2 from sklearn.preprocessing import StandardScaler
+3 
+4 def process_data(data):
+5     # Preprocess data
+6     scaler = StandardScaler()
+7     scaled_data = scaler.fit_transform(data)
+8     return scaled_data
+
+File: model_trainer.py
+1 import tensorflow as tf
+2 from sklearn.model_selection import train_test_split
+3 
+4 def train_model(processed_data):
+5     # Split data into training and testing sets
+6     X_train, X_test, y_train, y_test = train_test_split(processed_data.drop("target", axis=1), processed_data["target"], test_size=0.2, random_state=42)
+7 
+8     # Define and train model
+9     model = tf.keras.models.Sequential([
+10         tf.keras.layers.Dense(64, activation="relu", input_shape=(X_train.shape[1],)),
+11         tf.keras.layers.Dense(64, activation="relu"),
+12         tf.keras.layers.Dense(1)
+13     ])
+14     model.compile(optimizer="adam", loss="mean_squared_error")
+15     model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+16     return model
+
+File: dashboard_generator.py
+1 import tableau_api_lib
+2 import looker_sdk
+3 
+4 def generate_dashboard(model):
+5     # Create Tableau dashboard
+6     tableau_api = tableau_api_lib.TableauApi()
+7     dashboard = tableau_api.create_dashboard("My Dashboard")
+8     worksheet = dashboard.add_worksheet("My Worksheet")
+9     worksheet.add_data_source(model)
+10 
+11     # Create LookerStudio dashboard
+12     looker_sdk.init("my_instance_url", "my_client_id", "my_client_secret")
+13     looker_dashboard = looker_sdk.Dashboard("My Dashboard")
+14     looker_dashboard.add_element(looker_sdk.Text("My Text"))
+15     looker_dashboard.add_element(looker_sdk.Chart(model))
+
+```
+
+================================== Ai Message ==================================
+
+Here is a Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+python -m pip install --user -r requirements.txt
+
+# Run the codebase
+python main.py
+```
+Save this script to a file (e.g. `run_codebase.sh`), make it executable with `chmod +x run_codebase.sh`, and then run it with `./run_codebase.sh`.

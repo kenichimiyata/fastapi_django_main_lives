@@ -1,0 +1,149 @@
+
+2024-06-10T14:36:23.236905
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 gradio
+2 plantuml
+
+File: app.py
+1 import gradio as gr
+2 from plantuml import PlantUML
+3 
+4 puml = PlantUML()
+5 
+6 def generate_diagram(code):
+7     puml.processes_file("diagram.puml", code)
+8     with open("diagram.png", "rb") as f:
+9         img = f.read()
+10     return img
+11 
+12 iface = gr.Interface(
+13     fn=generate_diagram, 
+14     inputs="text", 
+15     outputs="image", 
+16     title="PlantUML Diagram Generator"
+17 )
+18 
+19 iface.launch()
+
+File: plantuml.py
+1 import subprocess
+2 
+3 class PlantUML:
+4     def processes_file(self, filename, code):
+5         with open(filename, "w") as f:
+6             f.write("@startuml\n")
+7             f.write(code)
+8             f.write("@enduml\n")
+9         subprocess.run(["plantuml", "-tpng", filename])
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the app
+python app.py
+```
+
+2024-06-10T14:41:08.598800
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 gradio
+2 plantuml
+
+File: gradio_plantuml_interface.py
+1 import gradio as gr
+2 from plantuml import PlantUML
+3 
+4 class GradioPlantUMLInterface:
+5     def __init__(self):
+6         self.plantuml = PlantUML()
+7 
+8     def generate_diagram(self, uml_code):
+9         """
+10         Generate a PlantUML diagram from the given UML code
+11         """
+12         diagram = self.plantuml.get_svg_string(uml_code)
+13         return diagram
+14 
+15     def create_interface(self):
+16         """
+17         Create a Gradio interface to input UML code and display the generated diagram
+18         """
+19         with gr.Blocks() as demo:
+20             with gr.Row():
+21                 uml_code = gr.Textbox(label="UML Code")
+22                 generate_button = gr.Button("Generate Diagram")
+23             diagram = gr.Image(label="Diagram")
+24 
+25             def generate_diagram(uml_code):
+26                 return self.generate_diagram(uml_code)
+27 
+28             generate_button.click(fn=generate_diagram, inputs=uml_code, outputs=diagram)
+29 
+30         return demo
+31 
+32 if __name__ == "__main__":
+33     interface = GradioPlantUMLInterface()
+34     demo = interface.create_interface()
+35     demo.launch()
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+python -m pip install --user -r requirements.txt
+
+# Run the code
+python gradio_plantuml_interface.py
+```

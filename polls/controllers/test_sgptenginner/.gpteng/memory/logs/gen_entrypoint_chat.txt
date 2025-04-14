@@ -1,0 +1,202 @@
+
+2024-06-09T21:05:23.745895
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 api/
+2 app/
+3 __init__.py
+4 main.py
+5 models/
+6 __init__.py
+7 user.py
+8 team.py
+9 schemas/
+10 __init__.py
+11 user.py
+12 team.py
+13 routers/
+14 __init__.py
+15 users.py
+16 teams.py
+17 __init__.py
+18 app.py
+19 requirements.txt
+20 .gitignore
+
+File: app/__init__.py
+1 # empty file
+
+File: app/main.py
+1 from fastapi import FastAPI
+2 from app.routers import users, teams
+3 
+4 app = FastAPI()
+5 
+6 app.include_router(users.router)
+7 app.include_router(teams.router)
+
+File: app/models/__init__.py
+1 # empty file
+
+File: app/models/user.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 from sqlalchemy.orm import sessionmaker
+4 
+5 Base = declarative_base()
+6 
+7 class User(Base):
+8     __tablename__ = 'users'
+9     id = Column(Integer, primary_key=True)
+10     username = Column(String, unique=True)
+11     password = Column(String)
+12     profile = Column(String)
+13     team_id = Column(Integer)
+14     tags = Column(String)
+15 
+16     def __repr__(self):
+17         return f"User(username={self.username}, profile={self.profile}, team_id={self.team_id}, tags={self.tags})"
+
+File: app/models/team.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 
+4 Base = declarative_base()
+5 
+6 class Team(Base):
+7     __tablename__ = 'teams'
+8     id = Column(Integer, primary_key=True)
+9     name = Column(String, unique=True)
+10 
+11     def __repr__(self):
+12         return f"Team(name={self.name})"
+
+File: app/schemas/__init__.py
+1 # empty file
+
+File: app/schemas/user.py
+1 from pydantic import BaseModel
+2 
+3 class UserSchema(BaseModel):
+4     username: str
+5     password: str
+6     profile: str
+7     team_id: int
+8     tags: str
+
+File: app/schemas/team.py
+1 from pydantic import BaseModel
+2 
+3 class TeamSchema(BaseModel):
+4     name: str
+
+File: app/routers/__init__.py
+1 # empty file
+
+File: app/routers/users.py
+1 from fastapi import APIRouter, HTTPException
+2 from app.schemas import UserSchema
+3 from app.models import User
+4 from sqlalchemy.orm import sessionmaker
+5 
+6 router = APIRouter()
+7 
+8 @router.post("/register")
+9 async def register_user(user: UserSchema):
+10     # Check if user already exists
+11     existing_user = session.query(User).filter_by(username=user.username).first()
+12     if existing_user:
+13         raise HTTPException(status_code=400, detail="Username already exists")
+14     new_user = User(username=user.username, password=user.password, profile=user.profile, team_id=user.team_id, tags=user.tags)
+15     session.add(new_user)
+16     session.commit()
+17     return {"message": "User created successfully"}
+18 
+19 @router.get("/users")
+20 async def get_users():
+21     users = session.query(User).all()
+22     return [{"username": user.username, "profile": user.profile, "team_id": user.team_id, "tags": user.tags} for user in users]
+23 
+24 @router.get("/users/{username}")
+25 async def get_user(username: str):
+26     user = session.query(User).filter_by(username=username).first()
+27     if not user:
+28         raise HTTPException(status_code=404, detail="User not found")
+29     return {"username": user.username, "profile": user.profile, "team_id": user.team_id, "tags": user.tags}
+
+File: app/routers/teams.py
+1 from fastapi import APIRouter
+2 from app.schemas import TeamSchema
+3 from app.models import Team
+4 from sqlalchemy.orm import sessionmaker
+5 
+6 router = APIRouter()
+7 
+8 @router.post("/teams")
+9 async def create_team(team: TeamSchema):
+10     new_team = Team(name=team.name)
+11     session.add(new_team)
+12     session.commit()
+13     return {"message": "Team created successfully"}
+14 
+15 @router.get("/teams")
+16 async def get_teams():
+17     teams = session.query(Team).all()
+18     return [{"name": team.name} for team in teams]
+
+File: app/app.py
+1 from fastapi import FastAPI
+2 from app.main import app
+3 from app.routers import users, teams
+4 
+5 app.include_router(users.router)
+6 app.include_router(teams.router)
+
+File: requirements.txt
+1 fastapi
+2 sqlalchemy
+3 pydantic
+
+File: .gitignore
+1 __pycache__/
+2 *.pyc
+3 *.sqlite
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+
+```bash
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create a SQLite database
+export DATABASE_URL=sqlite:///./sql_app.db
+python -c "from sqlalchemy import create_engine; engine = create_engine('$DATABASE_URL'); Base.metadata.create_all(engine)"
+
+# Run the FastAPI application
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+```

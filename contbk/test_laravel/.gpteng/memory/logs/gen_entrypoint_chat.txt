@@ -1,0 +1,527 @@
+
+2024-07-21T16:43:10.268275
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 app
+2 Models
+3 User.php
+4 Team.php
+5 Profile.php
+6 Tag.php
+7 Http
+8 Controllers
+9 Auth
+10 RegisterController.php
+11 LoginController.php
+12 ProfileController.php
+13 TeamController.php
+14 UserController.php
+15 Requests
+16 RegisterRequest.php
+17 LoginRequest.php
+18 ProfileRequest.php
+19 TeamRequest.php
+20 Kernel.php
+21 routes
+22 web.php
+23 database
+24 migrations
+25 create_users_table.php
+26 create_teams_table.php
+27 create_profiles_table.php
+28 create_tags_table.php
+29 seeds
+30 DatabaseSeeder.php
+31 config
+32 database.php
+33 app.php
+34 composer.json
+
+File: composer.json
+1 {
+2     "name": "laravel/laravel",
+3     "description": "The Laravel Framework.",
+4     "keywords": ["framework", "laravel"],
+5     "license": "MIT",
+6     "type": "project",
+7     "require": {
+8         "php": "^7.2.5",
+9         "fideloper/proxy": "^4.2",
+10         "fruitcake/laravel-cors": "^2.0",
+11         "guzzlehttp/guzzle": "^7.0.1",
+12         "laravel/framework": "^8.40",
+13         "laravel/tinker": "^2.5"
+14     },
+15     "require-dev": {
+16         "facade/ignition": "^2.5",
+17         "fakerphp/faker": "^1.9.1",
+18         "laravel/sail": "^1.0.1",
+19         "mockery/mockery": "^1.4.2",
+20         "nunomaduro/collision": "^5.0",
+21         "phpunit/phpunit": "^9.3.3"
+22     },
+23     "config": {
+24         "optimize-autoloader": true,
+25         "preferred-install": "dist",
+26         "sort-packages": true
+27     },
+28     "extra": {
+29         "laravel": {
+30             "dont-discover": []
+31         }
+32     },
+33     "autoload": {
+34         "psr-4": {
+35             "App\": "app/",
+36             "Database\": "database/"
+37         }
+38     },
+39     "autoload-dev": {
+40         "psr-4": {
+41             "App\": "app/"
+42         }
+43     },
+44     "minimum-stability": "dev",
+45     "prefer-stable": true,
+46     "scripts": {
+47         "post-autoload-dump": [
+48             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+49             "@php artisan package:discover --ansi"
+50         ],
+51         "post-root-package-install": [
+52             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+53         ],
+54         "post-create-project-cmd": [
+55             "@php artisan key:generate --ansi"
+56         ]
+57     }
+58 }
+
+File: app/Models/User.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 use Illuminate\Support\Facades\Hash;
+5 
+6 class User extends Model
+7 {
+8     protected $fillable = [
+9         'name',
+10         'email',
+11         'password',
+12     ];
+13 
+14     protected $hidden = [
+15         'password',
+16         'remember_token',
+17     ];
+18 
+19     public function profile()
+20     {
+21         return $this->hasOne(Profile::class);
+22     }
+23 
+24     public function teams()
+25     {
+26         return $this->belongsToMany(Team::class);
+27     }
+28 }
+
+File: app/Models/Team.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 
+5 class Team extends Model
+6 {
+7     protected $fillable = [
+8         'name',
+9     ];
+10 
+11     public function users()
+12     {
+13         return $this->belongsToMany(User::class);
+14     }
+15 }
+
+File: app/Models/Profile.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 
+5 class Profile extends Model
+6 {
+7     protected $fillable = [
+8         'user_id',
+9         'bio',
+10         'tags',
+11     ]
+12 
+13     public function user()
+14     {
+15         return $this->belongsTo(User::class);
+16     }
+17 }
+
+File: app/Models/Tag.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 
+5 class Tag extends Model
+6 {
+7     protected $fillable = [
+8         'name',
+9     ];
+10 
+11     public function profiles()
+12     {
+13         return $this->belongsToMany(Profile::class);
+14     }
+15 }
+
+File: app/Http/Controllers/Auth/RegisterController.php
+1 namespace App\Http\Controllers\Auth;
+2 
+3 use App\Http\Controllers\Controller;
+4 use App\Models\User;
+5 use Illuminate\Http\Request;
+6 use Illuminate\Support\Facades\Hash;
+7 
+8 class RegisterController extends Controller
+9 {
+10     public function create()
+11     {
+12         return view('auth.register');
+13     }
+14 
+15     public function store(Request $request)
+16     {
+17         $request->validate([
+18             'name' => 'required|string|max:255',
+19             'email' => 'required|string|email|max:255|unique:users',
+20             'password' => 'required|string|min:8|confirmed',
+21         ]);
+22 
+23         $user = User::create([
+24             'name' => $request->input('name'),
+25             'email' => $request->input('email'),
+26             'password' => Hash::make($request->input('password')),
+27         ]);
+28 
+29         auth()->login($user);
+30 
+31         return redirect()->route('users.index');
+32     }
+33 }
+
+File: app/Http/Controllers/Auth/LoginController.php
+1 namespace App\Http\Controllers\Auth;
+2 
+3 use App\Http\Controllers\Controller;
+4 use Illuminate\Http\Request;
+5 use Illuminate\Support\Facades\Auth;
+6 
+7 class LoginController extends Controller
+8 {
+9     public function create()
+10     {
+11         return view('auth.login');
+12     }
+13 
+14     public function store(Request $request)
+15     {
+16         $request->validate([
+17             'email' => 'required|string|email|max:255',
+18             'password' => 'required|string|min:8',
+19         ]);
+20 
+21         if (!Auth::attempt(['email' => $request->input('email'), 'password' => $request->input('password')])) {
+22             return back()->withErrors(['email' => 'Invalid credentials']);
+23         }
+24 
+25         return redirect()->route('users.index');
+26     }
+27 }
+
+File: app/Http/Controllers/ProfileController.php
+1 namespace App\Http\Controllers;
+2 
+3 use App\Http\Requests\ProfileRequest;
+4 use App\Models\Profile;
+5 use Illuminate\Http\Request;
+6 use Illuminate\Support\Facades\Auth;
+7 
+8 class ProfileController extends Controller
+9 {
+10     public function edit()
+11     {
+12         $user = Auth::user();
+13         return view('profiles.edit', compact('user'));
+14     }
+15 
+16     public function update(ProfileRequest $request)
+17     {
+18         $user = Auth::user();
+19         $user->profile->update([
+20             'bio' => $request->input('bio'),
+21             'tags' => $request->input('tags'),
+22         ]);
+23 
+24         return redirect()->route('users.show', $user);
+25     }
+26 }
+
+File: app/Http/Controllers/TeamController.php
+1 namespace App\Http\Controllers;
+2 
+3 use App\Http\Requests\TeamRequest;
+4 use App\Models\Team;
+5 use Illuminate\Http\Request;
+6 
+7 class TeamController extends Controller
+8 {
+9     public function index()
+10     {
+11         $teams = Team::latest()->get();
+12         return view('teams.index', compact('teams'));
+13     }
+14 
+15     public function create()
+16     {
+17         return view('teams.create');
+18     }
+19 
+20     public function store(TeamRequest $request)
+21     {
+22         Team::create([
+23             'name' => $request->input('name'),
+24         ]);
+25 
+26         return redirect()->route('teams.index');
+27     }
+28 }
+
+File: app/Http/Controllers/UserController.php
+1 namespace App\Http\Controllers;
+2 
+3 use App\Http\Requests\UserRequest;
+4 use App\Models\User;
+5 use Illuminate\Http\Request;
+6 
+7 class UserController extends Controller
+8 {
+9     public function index()
+10     {
+11         $users = User::latest()->get();
+12         return view('users.index', compact('users'));
+13     }
+14 
+15     public function show(User $user)
+16     {
+17         return view('users.show', compact('user'));
+18     }
+19 }
+
+File: app/Http/Requests/RegisterRequest.php
+1 namespace App\Http\Requests;
+2 
+3 use Illuminate\Foundation\Http\FormRequest;
+4 
+5 class RegisterRequest extends FormRequest
+6 {
+7     public function rules()
+8     {
+9         return [
+10             'name' => 'required|string|max:255',
+11             'email' => 'required|string|email|max:255|unique:users',
+12             'password' => 'required|string|min:8|confirmed',
+13         ];
+14     }
+15 }
+
+File: app/Http/Requests/LoginRequest.php
+1 namespace App\Http\Requests;
+2 
+3 use Illuminate\Foundation\Http\FormRequest;
+4 
+5 class LoginRequest extends FormRequest
+6 {
+7     public function rules()
+8     {
+9         return [
+10             'email' => 'required|string|email|max:255',
+11             'password' => 'required|string|min:8',
+12         ];
+13     }
+14 }
+
+File: app/Http/Requests/ProfileRequest.php
+1 namespace App\Http\Requests;
+2 
+3 use Illuminate\Foundation\Http\FormRequest;
+4 
+5 class ProfileRequest extends FormRequest
+6 {
+7     public function rules()
+8     {
+9         return [
+10             'bio' => 'required|string',
+11             'tags' => 'required|string',
+12         ];
+13     }
+14 }
+
+File: app/Http/Requests/TeamRequest.php
+1 namespace App\Http\Requests;
+2 
+3 use Illuminate\Foundation\Http\FormRequest;
+4 
+5 class TeamRequest extends FormRequest
+6 {
+7     public function rules()
+8     {
+9         return [
+10             'name' => 'required|string',
+11         ];
+12     }
+13 }
+
+File: database/migrations/create_users_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateUsersTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('users', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->string('email')->unique();
+12             $table->string('password');
+13             $table->rememberToken();
+14             $table->timestamps();
+15         });
+16     }
+17 
+18     public function down()
+19     {
+20         Schema::dropIfExists('users');
+21     }
+22 }
+
+File: database/migrations/create_teams_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateTeamsTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('teams', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->timestamps();
+12         });
+13     }
+14 
+15     public function down()
+16     {
+17         Schema::dropIfExists('teams');
+18     }
+19 }
+
+File: database/migrations/create_profiles_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateProfilesTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('profiles', function (Blueprint $table) {
+9             $table->id();
+10             $table->unsignedBigInteger('user_id');
+11             $table->string('bio');
+12             $table->string('tags');
+13             $table->timestamps();
+14 
+15             $table->foreign('user_id')->references('id')->on('users');
+16         });
+17     }
+18 
+19     public function down()
+20     {
+21         Schema::dropIfExists('profiles');
+22     }
+23 }
+
+File: database/migrations/create_tags_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateTagsTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('tags', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->timestamps();
+12         });
+13     }
+14 
+15     public function down()
+16     {
+17         Schema::dropIfExists('tags');
+18     }
+19 }
+
+File: routes/web.php
+1 Route::get('/register', 'Auth\RegisterController@create')->name('register');
+2 Route::post('/register', 'Auth\RegisterController@store')->name('register.store');
+3 
+4 Route::get('/login', 'Auth\LoginController@create')->name('login');
+5 Route::post('/login', 'Auth\LoginController@store')->name('login.store');
+6 
+7 Route::get('/profiles/{user}', 'ProfileController@show')->name('users.show');
+8 Route::get('/profiles/{user}/edit', 'ProfileController@edit')->name('users.edit');
+9 Route::patch('/profiles/{user}', 'ProfileController@update')->name('users.update');
+10 
+11 Route::get('/teams', 'TeamController@index')->name('teams.index');
+12 Route::get('/teams/create', 'TeamController@create')->name('teams.create');
+13 Route::post('/teams', 'TeamController@store')->name('teams.store');
+14 
+15 Route::get('/users', 'UserController@index')->name('users.index');
+16 Route::get('/users/{user}', 'UserController@show')->name('users.show');
+
+```
+
+================================== Ai Message ==================================
+
+```
+composer install
+php artisan migrate
+php artisan db:seed
+php artisan serve
+```

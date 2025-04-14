@@ -1,0 +1,165 @@
+
+2024-06-10T15:59:34.829444
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 Flask==2.0.1
+2 Flask-SQLAlchemy==2.5.1
+3 SQLAlchemy==1.4.25
+4 React==17.0.2
+
+File: app.py
+1 from flask import Flask, jsonify
+2 from flask_sqlalchemy import SQLAlchemy
+3 
+4 app = Flask(__name__)
+5 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///stepup.db"
+6 db = SQLAlchemy(app)
+7 
+8 @app.route("/api/language_schools", methods=["GET"])
+9 def get_language_schools():
+10     language_schools = LanguageSchool.query.all()
+11     return jsonify([school.to_dict() for school in language_schools])
+12 
+13 if __name__ == "__main__":
+14     app.run(debug=True)
+
+File: models.py
+1 from app import db
+2 
+3 class User(db.Model):
+4     id = db.Column(db.Integer, primary_key=True)
+5     name = db.Column(db.String(100), nullable=False)
+6     email = db.Column(db.String(100), unique=True, nullable=False)
+7     password = db.Column(db.String(100), nullable=False)
+8 
+9 class LanguageSchool(db.Model):
+10     id = db.Column(db.Integer, primary_key=True)
+11     name = db.Column(db.String(100), nullable=False)
+12     location = db.Column(db.String(100), nullable=False)
+13     pricing = db.Column(db.String(100), nullable=False)
+14 
+15 class CustomizedPlan(db.Model):
+16     id = db.Column(db.Integer, primary_key=True)
+17     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+18     language_school_id = db.Column(db.Integer, db.ForeignKey("language_school.id"))
+19     duration = db.Column(db.String(100), nullable=False)
+20     options = db.Column(db.String(100), nullable=False)
+21 
+22 class Area(db.Model):
+23     id = db.Column(db.Integer, primary_key=True)
+24     name = db.Column(db.String(100), nullable=False)
+25     location = db.Column(db.String(100), nullable=False)
+26 
+27 class Option(db.Model):
+28     id = db.Column(db.Integer, primary_key=True)
+29     name = db.Column(db.String(100), nullable=False)
+30     price = db.Column(db.String(100), nullable=False)
+
+File: routes.py
+1 from app import app
+2 from models import LanguageSchool, CustomizedPlan
+3 
+4 @app.route("/api/register", methods=["POST"])
+5 def register_user():
+6     # Register a new user
+7     pass
+8 
+9 @app.route("/api/language_schools", methods=["GET"])
+10 def get_language_schools():
+11     # Return a list of language schools
+12     pass
+13 
+14 @app.route("/api/customized_plan", methods=["POST"])
+15 def create_customized_plan():
+16     # Create a customized plan for a user
+17     pass
+
+File: database.py
+1 from app import db
+2 
+3 def create_database():
+4     db.create_all()
+5 
+6 def query_database(query):
+7     return db.session.execute(query)
+
+File: index.html
+1 <!DOCTYPE html>
+2 <html>
+3 <head>
+4     <title>StepUp International</title>
+5 </head>
+6 <body>
+7     <nav>
+8         <ul>
+9             <li><a href="#">Language Schools</a></li>
+10             <li><a href="#">Customized Plans</a></li>
+11         </ul>
+12     </nav>
+13     <div id="root"></div>
+14     <script src="index.js"></script>
+15 </body>
+16 </html>
+
+File: components/Navigation.js
+1 import React from "react";
+2 
+3 const Navigation = () => {
+4     return (
+5         <nav>
+6             <ul>
+7                 <li><a href="#">Language Schools</a></li>
+8                 <li><a href="#">Customized Plans</a></li>
+9             </ul>
+10         </nav>
+11     );
+12 };
+13 
+14 export default Navigation;
+
+File: api.js
+1 import axios from "axios";
+2 
+3 const api = axios.create({
+4     baseURL: "http://localhost:5000/api"
+5 });
+6 
+7 export default api;
+
+```
+
+================================== Ai Message ==================================
+
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Create database
+python database.py
+python database.py create_database
+
+# Run Flask app
+python app.py &
+```
+Note: The `&` at the end of the last command is to run the Flask app in the background, so the script doesn't block.

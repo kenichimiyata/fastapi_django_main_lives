@@ -1,0 +1,191 @@
+
+2024-06-10T12:40:08.118728
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 appsheet-qa/
+2 requirements.txt
+3 main.py
+4 lib/
+5 ocr.py
+6 line_dev.py
+7 gas.py
+8 tests/
+9 test_ocr.py
+10 test_line_dev.py
+11 test_gas.py
+
+File: requirements.txt
+1 google-api-python-client
+2 google-auth
+3 google-auth-oauthlib
+4 google-auth-httplib2
+5 line-bot-sdk
+6 Pillow
+7 pytesseract
+
+File: main.py
+1 import os
+2 from lib.ocr import ocr_image
+3 from lib.line_dev import send_image
+4 from lib.gas import save_image_to_drive
+5 
+6 def main():
+7     # Load image from AppSheet QA
+8     image_data = load_image_from_appsheet_qa()
+9 
+10     # Perform OCR on the image
+11     text = ocr_image(image_data)
+12 
+13     # Send the OCR result to Line Dev
+14     send_image(text)
+15 
+16     # Save the image to Google Drive using GAS
+17     save_image_to_drive(image_data)
+18 
+19 if __name__ == "__main__":
+20     main()
+
+File: lib/ocr.py
+1 import pytesseract
+2 from PIL import Image
+3 
+4 def ocr_image(image_data):
+5     # Create a temporary file for the image
+6     with open("temp.jpg", "wb") as f:
+7         f.write(image_data)
+8 
+9     # Perform OCR using Tesseract
+10     text = pytesseract.image_to_string(Image.open("temp.jpg"))
+11 
+12     # Remove the temporary file
+13     os.remove("temp.jpg")
+14 
+15     return text
+
+File: lib/line_dev.py
+1 from linebot import LineBot, WebhookHandler
+2 from linebot.models import TextSendMessage
+3 
+4 line_bot = LineBot("YOUR_LINE_BOT_CHANNEL_ACCESS_TOKEN")
+5 
+6 def send_image(text):
+7     # Send the OCR result to Line Dev
+8     line_bot.push_message("YOUR_LINE_USER_ID", TextSendMessage(text=text))
+
+File: lib/gas.py
+1 import os
+2 from google.oauth2 import service_account
+3 from googleapiclient.discovery import build
+4 from googleapiclient.errors import HttpError
+5 
+6 def save_image_to_drive(image_data):
+7     # Create credentials for Google Apps Script
+8     credentials = service_account.Credentials.from_service_account_file(
+9         "path/to/service_account_key.json",
+10         scopes=["https://www.googleapis.com/auth/drive"]
+11     )
+12 
+13     # Create the Google Drive API client
+14     drive_service = build("drive", "v3", credentials=credentials)
+15 
+16     # Create a new file on Google Drive
+17     file_metadata = {
+18         "name": "ocr_image.jpg",
+19         "mimeType": "image/jpeg"
+20     }
+21     media = MediaFileUpload("temp.jpg", mimetype="image/jpeg")
+22     file = drive_service.files().create(body=file_metadata, media_body=media).execute()
+23 
+24     # Remove the temporary file
+25     os.remove("temp.jpg")
+
+File: tests/test_ocr.py
+1 import unittest
+2 from lib.ocr import ocr_image
+3 
+4 class TestOCR(unittest.TestCase):
+5     def test_ocr_image(self):
+6         # Load a sample image
+7         with open("sample_image.jpg", "rb") as f:
+8             image_data = f.read()
+9 
+10         # Perform OCR on the image
+11         text = ocr_image(image_data)
+12 
+13         # Assert that the OCR result is not empty
+14         self.assertIsNotNone(text)
+15 
+16 if __name__ == "__main__":
+17     unittest.main()
+
+File: tests/test_line_dev.py
+1 import unittest
+2 from lib.line_dev import send_image
+3 
+4 class TestLineDev(unittest.TestCase):
+5     def test_send_image(self):
+6         # Send a sample message to Line Dev
+7         send_image("Hello, World!")
+8 
+9         # Assert that the message was sent successfully
+10         self.assertTrue(True)
+11 
+12 if __name__ == "__main__":
+13     unittest.main()
+
+File: tests/test_gas.py
+1 import unittest
+2 from lib.gas import save_image_to_drive
+3 
+4 class TestGAS(unittest.TestCase):
+5     def test_save_image_to_drive(self):
+6         # Load a sample image
+7         with open("sample_image.jpg", "rb") as f:
+8             image_data = f.read()
+9 
+10         # Save the image to Google Drive
+11         save_image_to_drive(image_data)
+12 
+13         # Assert that the file was saved successfully
+14         self.assertTrue(True)
+15 
+16 if __name__ == "__main__":
+17     unittest.main()
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests
+python -m unittest discover -v tests
+
+# Run main script
+python main.py
+```
+Save this script to a file (e.g., `run.sh`), make it executable with `chmod +x run.sh`, and then run it with `./run.sh`.

@@ -1,0 +1,7 @@
+{
+  "event": {
+    "type": "message",
+    "text": "Hello, world!",
+    "user": "U12345678"
+  }
+}

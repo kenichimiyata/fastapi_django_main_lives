@@ -1,0 +1,128 @@
+
+2024-06-10T16:07:57.086868
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: requirements.txt
+1 python-dotenv
+2 slack-sdk
+3 transformers
+
+File: lambda_function.py
+1 import os
+2 import json
+3 from slack import WebClient, Msg
+4 from transformers import pipeline
+5 
+6 # Load environment variables
+7 SLACK_BOT_TOKEN = os.environ['SLACK_BOT_TOKEN']
+8 SLACK_CHANNEL = os.environ['SLACK_CHANNEL']
+9 
+10 # Initialize Slack client
+11 client = WebClient(token=SLACK_BOT_TOKEN)
+12 
+13 # Initialize ChatGPT model
+14 chat_gpt = pipeline('conversational_ai', model='facebook/bart-base')
+15 
+16 def lambda_handler(event, context):
+17     # Parse Slack event
+18     event_text = event['event']['text']
+19     user_id = event['event']['user']
+20 
+21     # Generate response using ChatGPT
+22     response = chat_gpt(event_text, max_length=100)
+23 
+24     # Post response to Slack channel
+25     client.chat_postMessage(
+26         channel=SLACK_CHANNEL,
+27         text=response
+28     )
+29 
+30     return {
+31         'statusCode': 200,
+32         'statusMessage': 'OK'
+33     }
+
+File: event.json
+1 {
+2   "event": {
+3     "type": "message",
+4     "text": "Hello, world!",
+5     "user": "U12345678"
+6   }
+7 }
+
+File: .env
+1 SLACK_BOT_TOKEN=xoxb-1234567890
+2 SLACK_CHANNEL=C1234567890
+
+File: Dockerfile
+1 FROM python:3.9-slim
+2 
+3 WORKDIR /app
+4 
+5 COPY requirements.txt .
+6 
+7 RUN pip install -r requirements.txt
+8 
+9 COPY . .
+10 
+11 CMD ["lambda_function.lambda_handler"]
+
+File: template.yaml
+1 AWSTemplateFormatVersion: '2010-09-09'
+2 Transform: AWS::Serverless-2016-10-31
+3 
+4 Resources:
+5   SlackChatBotFunction:
+6     Type: AWS::Serverless::Function
+7     Properties:
+8       FunctionName: !Sub 'slack-chat-bot-${AWS::Region}'
+9       Runtime: python3.9
+10       Handler: lambda_function.lambda_handler
+11       Environment:
+12         Variables:
+13           SLACK_BOT_TOKEN: !Sub 'xoxb-1234567890'
+14           SLACK_CHANNEL: !Sub 'C1234567890'
+15       Events:
+16         SlackEvent:
+17           Type: Api
+18           Properties:
+19             Path: /slack
+20             Method: post
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Load environment variables
+export $(cat .env | xargs)
+
+# Run the lambda function with the event.json file
+python lambda_function.py lambda_handler event.json
+```
+Note: Make sure to make the script executable by running `chmod +x script.sh` and then run it with `./script.sh`

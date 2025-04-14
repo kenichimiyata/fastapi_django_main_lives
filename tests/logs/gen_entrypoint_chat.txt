@@ -1,0 +1,182 @@
+
+2024-06-10T16:03:32.979243
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: structure
+1 banking_system
+2 requirements.txt
+3 src
+4 __init__.py
+5 account.py
+6 bank.py
+7 customer.py
+8 main.py
+9 tests
+10 __init__.py
+11 test_account.py
+12 test_bank.py
+13 test_customer.py
+
+File: requirements.txt
+1 pytest
+2 dataclasses
+
+File: src/__init__.py
+1 # empty file
+
+File: src/account.py
+1 from dataclasses import dataclass
+2 
+3 @dataclass
+4 class Account:
+5     """Represents a bank account."""
+6     account_number: int
+7     balance: float = 0.0
+8 
+9     def deposit(self, amount: float) -> None:
+10         """Deposit money into the account."""
+11         self.balance += amount
+12 
+13     def withdraw(self, amount: float) -> None:
+14         """Withdraw money from the account."""
+15         if amount > self.balance:
+16             raise ValueError("Insufficient balance")
+17         self.balance -= amount
+
+File: src/bank.py
+1 from typing import List
+2 from .account import Account
+3 from .customer import Customer
+4 
+5 class Bank:
+6     """Represents a bank."""
+7     def __init__(self):
+8         self.customers: List[Customer] = []
+9 
+10     def add_customer(self, customer: Customer) -> None:
+11         """Add a customer to the bank."""
+12         self.customers.append(customer)
+13 
+14     def get_customer(self, customer_id: int) -> Customer:
+15         """Get a customer by ID."""
+16         for customer in self.customers:
+17             if customer.customer_id == customer_id:
+18                 return customer
+19         return None
+
+File: src/customer.py
+1 from dataclasses import dataclass
+2 from .account import Account
+3 
+4 @dataclass
+5 class Customer:
+6     """Represents a bank customer."""
+7     customer_id: int
+8     name: str
+9     accounts: List[Account] = None
+10 
+11     def __post_init__(self):
+12         self.accounts = []
+13 
+14     def add_account(self, account: Account) -> None:
+15         """Add an account to the customer."""
+16         self.accounts.append(account)
+
+File: src/main.py
+1 from .bank import Bank
+2 from .customer import Customer
+3 from .account import Account
+4 
+5 def main():
+6     bank = Bank()
+7 
+8     customer1 = Customer(customer_id=1, name="John Doe")
+9     customer1.add_account(Account(account_number=1234))
+10     customer1.add_account(Account(account_number=5678))
+11 
+12     bank.add_customer(customer1)
+13 
+14     print(bank.get_customer(1).accounts)
+15 
+16 if __name__ == "__main__":
+17     main()
+
+File: tests/__init__.py
+1 # empty file
+
+File: tests/test_account.py
+1 from unittest import TestCase
+2 from src.account import Account
+3 
+4 class TestAccount(TestCase):
+5     def test_deposit(self):
+6         account = Account(account_number=1234)
+7         account.deposit(100.0)
+8         self.assertEqual(account.balance, 100.0)
+9 
+10     def test_withdraw(self):
+11         account = Account(account_number=1234)
+12         account.deposit(100.0)
+13         account.withdraw(50.0)
+14         self.assertEqual(account.balance, 50.0)
+
+File: tests/test_bank.py
+1 from unittest import TestCase
+2 from src.bank import Bank
+3 from src.customer import Customer
+4 
+5 class TestBank(TestCase):
+6     def test_add_customer(self):
+7         bank = Bank()
+8         customer = Customer(customer_id=1, name="John Doe")
+9         bank.add_customer(customer)
+10         self.assertIn(customer, bank.customers)
+
+File: tests/test_customer.py
+1 from unittest import TestCase
+2 from src.customer import Customer
+3 from src.account import Account
+4 
+5 class TestCustomer(TestCase):
+6     def test_add_account(self):
+7         customer = Customer(customer_id=1, name="John Doe")
+8         account = Account(account_number=1234)
+9         customer.add_account(account)
+10         self.assertIn(account, customer.accounts)
+
+```
+
+================================== Ai Message ==================================
+
+Here is a Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run tests in parallel
+pytest -n 3 tests/
+
+# Run main script
+python src/main.py
+```
+Save this script to a file (e.g. `run_codebase.sh`), make it executable with `chmod +x run_codebase.sh`, and then run it with `./run_codebase.sh`.

@@ -1,0 +1,136 @@
+
+2024-06-10T04:53:08.215611
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 polls/
+2     __init__.py
+3     admin.py
+4     apps.py
+5     models.py
+6     tests.py
+7     views.py
+8     templates/
+9         polls/
+10             index.html
+11     __pycache__/
+12 manage.py
+13 requirements.txt
+
+File: manage.py
+1 import os
+2 import sys
+3 
+4 if __name__ == "__main__":
+5     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "polls.settings")
+6     try:
+7         from django.core.management import execute_from_command_line
+8     except ImportError as exc:
+9         raise ImportError(
+10             "Couldn't import Django. Are you sure it's installed and "
+11             "available on your PYTHONPATH environment variable? Did you "
+12             "forget to activate a virtual environment?"
+13         ) from exc
+14     execute_from_command_line(sys.argv)
+
+File: polls/apps.py
+1 from django.apps import AppConfig
+2 
+3 class PollsConfig(AppConfig):
+4     name = "polls"
+5     verbose_name = "Polls"
+
+File: polls/models.py
+1 from django.db import models
+2 
+3 class Product(models.Model):
+4     name = models.CharField(max_length=255)
+5     description = models.TextField()
+6     price = models.DecimalField(max_digits=10, decimal_places=2)
+7 
+8     def __str__(self):
+9         return self.name
+
+File: polls/admin.py
+1 from django.contrib import admin
+2 from .models import Product
+3 
+4 @admin.register(Product)
+5 class ProductAdmin(admin.ModelAdmin):
+6     list_display = ("name", "description", "price")
+7     search_fields = ("name", "description")
+
+File: polls/views.py
+1 from django.shortcuts import render
+2 from .models import Product
+3 
+4 def index(request):
+5     products = Product.objects.all()
+6     return render(request, "polls/index.html", {"products": products})
+
+File: polls/templates/polls/index.html
+1 {% extends "base.html" %}
+2 
+3 {% block content %}
+4   <h1>Products</h1>
+5   <ul>
+6     {% for product in products %}
+7       <li>{{ product.name }} ({{ product.price }})</li>
+8     {% endfor %}
+9   </ul>
+10 {% endblock %}
+
+File: polls/urls.py
+1 from django.urls import path
+2 from . import views
+3 
+4 urlpatterns = [
+5     path("", views.index, name="index"),
+6 ]
+
+File: polls/__init__.py
+1 default
+
+File: requirements.txt
+1 Django==3.2.5
+
+File: root)
+1 from django.urls import include, path
+2 
+3 urlpatterns = [
+4     path("polls/", include("polls.urls")),
+5 ]
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the Django application
+python manage.py runserver
+```
+Save this script to a file (e.g. `run.sh`), make it executable with `chmod +x run.sh`, and then run it with `./run.sh`.

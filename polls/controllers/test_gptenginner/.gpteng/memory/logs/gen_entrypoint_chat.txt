@@ -1,0 +1,630 @@
+
+2024-06-09T21:19:51.579923
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 api/
+2 app/
+3 __init__.py
+4 main.py
+5 models/
+6 __init__.py
+7 user.py
+8 team.py
+9 schemas/
+10 __init__.py
+11 user.py
+12 team.py
+13 routers/
+14 __init__.py
+15 users.py
+16 teams.py
+17 __init__.py
+18 app.py
+19 requirements.txt
+20 .gitignore
+
+File: app/__init__.py
+1 # empty file
+
+File: app/main.py
+1 from fastapi import FastAPI
+2 from app.routers import users, teams
+3 
+4 app = FastAPI()
+5 
+6 app.include_router(users.router)
+7 app.include_router(teams.router)
+
+File: app/models/__init__.py
+1 # empty file
+
+File: app/models/user.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 from sqlalchemy.orm import relationship
+4 
+5 Base = declarative_base()
+6 
+7 class User(Base):
+8     __tablename__ = 'users'
+9     id = Column(Integer, primary_key=True)
+10     username = Column(String, unique=True)
+11     password = Column(String)
+12     profile = Column(String)
+13     team_id = Column(Integer, ForeignKey('teams.id'))
+14     team = relationship('Team', backref='users')
+15 
+16     def __repr__(self):
+17         return f'User(username={self.username}, profile={self.profile})'
+
+File: app/models/team.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 
+4 Base = declarative_base()
+5 
+6 class Team(Base):
+7     __tablename__ = 'teams'
+8     id = Column(Integer, primary_key=True)
+9     name = Column(String, unique=True)
+10     created_at = Column(DateTime, default=datetime.utcnow)
+11 
+12     def __repr__(self):
+13         return f'Team(name={self.name}, created_at={self.created_at})'
+
+File: app/schemas/__init__.py
+1 # empty file
+
+File: app/schemas/user.py
+1 from pydantic import BaseModel
+2 
+3 class UserSchema(BaseModel):
+4     username: str
+5     profile: str
+6     team_id: int
+7 
+8     class Config:
+9         orm_mode = True
+
+File: app/schemas/team.py
+1 from pydantic import BaseModel
+2 
+3 class TeamSchema(BaseModel):
+4     name: str
+5 
+6     class Config:
+7         orm_mode = True
+
+File: app/routers/__init__.py
+1 # empty file
+
+File: app/routers/users.py
+1 from fastapi import APIRouter, HTTPException
+2 from app.schemas import UserSchema
+3 from app.models import User
+4 
+5 router = APIRouter()
+6 
+7 @router.post("/register")
+8 async def register_user(username: str, password: str):
+9     if User.query.filter_by(username=username).first():
+10         raise HTTPException(status_code=400, detail="Username already exists")
+11     user = User(username=username, password=password)
+12     db.session.add(user)
+13     db.session.commit()
+14     return {"message": "User created successfully"}
+15 
+16 @router.get("/users/")
+17 async def read_users():
+18     users = User.query.all()
+19     return [{"username": user.username, "profile": user.profile} for user in users]
+20 
+21 @router.get("/users/{username}")
+22 async def read_user(username: str):
+23     user = User.query.filter_by(username=username).first()
+24     if not user:
+25         raise HTTPException(status_code=404, detail="User not found")
+26     return {"username": user.username, "profile": user.profile}
+
+File: app/routers/teams.py
+1 from fastapi import APIRouter
+2 from app.schemas import TeamSchema
+3 from app.models import Team
+4 
+5 router = APIRouter()
+6 
+7 @router.post("/teams/")
+8 async def create_team(name: str):
+9     team = Team(name=name)
+10     db.session.add(team)
+11     db.session.commit()
+12     return {"message": "Team created successfully"}
+13 
+14 @router.get("/teams/")
+15 async def read_teams():
+16     teams = Team.query.all()
+17     return [{"name": team.name} for team in teams]
+
+File: app/app.py
+1 from fastapi import FastAPI
+2 from app.main import app
+3 from app.models import Base
+4 from sqlalchemy import create_engine
+5 from sqlalchemy.orm import sessionmaker
+6 
+7 engine = create_engine('sqlite:///database.db')
+8 Base.metadata.create_all(engine)
+9 
+10 Session = sessionmaker(bind=engine)
+11 db = Session()
+12 
+13 if __name__ == "__main__":
+14     import uvicorn
+15     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+File: requirements.txt
+1 fastapi
+2 sqlalchemy
+3 pydantic
+4 uvicorn
+
+File: .gitignore
+1 __pycache__/
+2 database.db
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+
+```bash
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+python app/app.py
+```
+
+2024-06-09T21:21:17.268418
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: .gitignore
+1 __pycache__/
+2 *.sqlite
+
+File: requirements.txt
+1 fastapi
+2 sqlalchemy
+3 pydantic
+
+File: api/main.py
+1 from fastapi import FastAPI
+2 from fastapi.responses import JSONResponse
+3 from fastapi.requests import Request
+4 from fastapi.security.utils import get_authorization_scheme
+5 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+6 from sqlalchemy.ext.declarative import declarative_base
+7 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+8 from sqlalchemy.orm import sessionmaker, relationship
+9 from pydantic import BaseModel
+10 from typing import List
+11 
+12 app = FastAPI()
+13 
+14 Base = declarative_base()
+15 
+16 class User(Base):
+17     __tablename__ = "users"
+18     id = Column(Integer, primary_key=True)
+19     username = Column(String, unique=True)
+20     password = Column(String)
+21     profile = Column(String)
+22     team_id = Column(Integer, ForeignKey("teams.id"))
+23     team = relationship("Team", backref="users")
+24 
+25 class Team(Base):
+26     __tablename__ = "teams"
+27     id = Column(Integer, primary_key=True)
+28     name = Column(String, unique=True)
+29 
+30 engine = create_async_engine("sqlite:///database.sqlite")
+31 Base.metadata.create_all(engine)
+32 
+33 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+34 
+35 @app.on_event("startup")
+36 async def startup():
+37     async with async_session() as session:
+38         await session.execute("PRAGMA foreign_keys=ON")
+39 
+40 @app.on_event("shutdown")
+41 async def shutdown():
+42     await engine.dispose()
+43 
+44 class UserSchema(BaseModel):
+45     username: str
+46     password: str
+47     profile: str
+48     team_id: int
+49 
+50 class TeamSchema(BaseModel):
+51     name: str
+52 
+53 @app.post("/register")
+54 async def register_user(user: UserSchema):
+55     async with async_session() as session:
+56         existing_user = await session.execute(User.__table__.select().where(User.username == user.username))
+57         if existing_user.scalar():
+58             return JSONResponse(status_code=400, content={"error": "Username already exists"})
+59         new_user = User(username=user.username, password=user.password, profile=user.profile, team_id=user.team_id)
+60         session.add(new_user)
+61         await session.commit()
+62         return JSONResponse(status_code=201, content={"message": "User created successfully"})
+63 
+64 @app.post("/login")
+65 async def login_user(username: str, password: str):
+66     async with async_session() as session:
+67         user = await session.execute(User.__table__.select().where(User.username == username))
+68         user = user.scalar()
+69         if not user or user.password != password:
+70             return JSONResponse(status_code=401, content={"error": "Invalid username or password"})
+71         return JSONResponse(status_code=200, content={"message": "Logged in successfully"})
+72 
+73 @app.get("/teams/")
+74 async def get_teams():
+75     async with async_session() as session:
+76         teams = await session.execute(Team.__table__.select())
+77         teams = teams.scalars().all()
+78         return JSONResponse(status_code=200, content=[{"id": team.id, "name": team.name} for team in teams])
+79 
+80 @app.post("/teams/")
+81 async def create_team(team: TeamSchema):
+82     async with async_session() as session:
+83         new_team = Team(name=team.name)
+84         session.add(new_team)
+85         await session.commit()
+86         return JSONResponse(status_code=201, content={"message": "Team created successfully"})
+87 
+88 @app.get("/users/")
+89 async def get_users():
+90     async with async_session() as session:
+91         users = await session.execute(User.__table__.select())
+92         users = users.scalars().all()
+93         return JSONResponse(status_code=200, content=[{"id": user.id, "username": user.username, "profile": user.profile} for user in users])
+94 
+95 @app.get("/users/{user_id}")
+96 async def get_user(user_id: int):
+97     async with async_session() as session:
+98         user = await session.execute(User.__table__.select().where(User.id == user_id))
+99         user = user.scalar()
+100         if not user:
+101             return JSONResponse(status_code=404, content={"error": "User not found"})
+102         return JSONResponse(status_code=200, content={"username": user.username, "profile": user.profile, "team_id": user.team_id})
+103 
+104 @app.put("/users/{user_id}")
+105 async def update_user(user_id: int, user: UserSchema):
+106     async with async_session() as session:
+107         user_db = await session.execute(User.__table__.select().where(User.id == user_id))
+108         user_db = user_db.scalar()
+109         if not user_db:
+110             return JSONResponse(status_code=404, content={"error": "User not found"})
+111         user_db.username = user.username
+112         user_db.profile = user.profile
+113         user_db.team_id = user.team_id
+114         await session.commit()
+115         return JSONResponse(status_code=200, content={"message": "User updated successfully"})
+116 
+117 @app.get("/search")
+118 async def search_users(q: str):
+119     async with async_session() as session:
+120         users = await session.execute(User.__table__.select().where(User.profile.like(f"%{q}%")))
+121         users = users.scalars().all()
+122         return JSONResponse(status_code=200, content=[{"id": user.id, "username": user.username, "profile": user.profile} for user in users])
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the API
+uvicorn api.main:app --host 0.0.0.0 --port 8000
+```
+
+2024-06-09T21:23:24.581445
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 api/
+2 app/
+3 __init__.py
+4 main.py
+5 models/
+6 __init__.py
+7 user.py
+8 team.py
+9 schemas/
+10 __init__.py
+11 user.py
+12 team.py
+13 routers/
+14 __init__.py
+15 users.py
+16 teams.py
+17 __init__.py
+18 app.py
+19 requirements.txt
+20 .gitignore
+21 tests/
+22 __init__.py
+23 test_users.py
+24 test_teams.py
+
+File: app/__init__.py
+1 # empty file
+
+File: app/main.py
+1 from fastapi import FastAPI
+2 from fastapi.responses import JSONResponse
+3 from fastapi.requests import Request
+4 from fastapi.security.utils import get_authorization_scheme
+5 from fastapi.security import OAuth2PasswordBearer, SecurityScopes
+6 from sqlalchemy.orm import sessionmaker
+7 from sqlalchemy import create_engine
+8 from app.models import Base
+9 from app.routers import users, teams
+10 
+11 app = FastAPI()
+12 
+13 engine = create_engine('sqlite:///database.db')
+14 Base.metadata.create_all(engine)
+15 
+16 Session = sessionmaker(bind=engine)
+17 session = Session()
+18 
+19 @app.on_event("startup")
+20 async def startup():
+21     Base.metadata.create_all(engine)
+22 
+23 @app.on_event("shutdown")
+24 async def shutdown():
+25     session.close()
+
+File: app/models/__init__.py
+1 # empty file
+
+File: app/models/user.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 from sqlalchemy.orm import relationship
+4 
+5 Base = declarative_base()
+6 
+7 class User(Base):
+8     __tablename__ = 'users'
+9     id = Column(Integer, primary_key=True)
+10     username = Column(String, unique=True)
+11     password = Column(String)
+12     profile = Column(String)
+13     team_id = Column(Integer, ForeignKey('teams.id'))
+14     team = relationship('Team', backref='users')
+15 
+16     def __repr__(self):
+17         return f"User(username={self.username}, profile={self.profile})"
+
+File: app/models/team.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.ext.declarative import declarative_base
+3 from sqlalchemy.orm import relationship
+4 
+5 Base = declarative_base()
+6 
+7 class Team(Base):
+8     __tablename__ = 'teams'
+9     id = Column(Integer, primary_key=True)
+10     name = Column(String, unique=True)
+11     created_at = Column(DateTime, default=datetime.utcnow)
+
+File: app/schemas/__init__.py
+1 # empty file
+
+File: app/schemas/user.py
+1 from pydantic import BaseModel
+2 from app.models import User
+3 
+4 class UserSchema(BaseModel):
+5     id: int
+6     username: str
+7     profile: str
+8     team_id: int
+9 
+10     class Config:
+11         orm_mode = True
+
+File: app/schemas/team.py
+1 from pydantic import BaseModel
+2 from app.models import Team
+3 
+4 class TeamSchema(BaseModel):
+5     id: int
+6     name: str
+7     created_at: datetime
+8 
+9     class Config:
+10         orm_mode = True
+
+File: app/routers/__init__.py
+1 # empty file
+
+File: app/routers/users.py
+1 from fastapi import APIRouter, HTTPException
+2 from app.schemas import UserSchema
+3 from app.models import User
+4 from sqlalchemy.orm import sessionmaker
+5 
+6 router = APIRouter()
+7 
+8 @router.post("/register")
+9 async def register_user(username: str, password: str):
+10     user = User(username=username, password=password)
+11     session.add(user)
+12     session.commit()
+13     return {"message": "User created successfully"}
+14 
+15 @router.get("/users/")
+16 async def read_users():
+17     users = session.query(User).all()
+18     return [{"id": user.id, "username": user.username, "profile": user.profile} for user in users]
+19 
+20 @router.get("/users/{user_id}")
+21 async def read_user(user_id: int):
+22     user = session.query(User).filter(User.id == user_id).first()
+23     if user is None:
+24         raise HTTPException(status_code=404, detail="User not found")
+25     return {"id": user.id, "username": user.username, "profile": user.profile}
+
+File: app/routers/teams.py
+1 from fastapi import APIRouter
+2 from app.schemas import TeamSchema
+3 from app.models import Team
+4 from sqlalchemy.orm import sessionmaker
+5 
+6 router = APIRouter()
+7 
+8 @router.post("/teams/")
+9 async def create_team(name: str):
+10     team = Team(name=name)
+11     session.add(team)
+12     session.commit()
+13     return {"message": "Team created successfully"}
+14 
+15 @router.get("/teams/")
+16 async def read_teams():
+17     teams = session.query(Team).all()
+18     return [{"id": team.id, "name": team.name} for team in teams]
+
+File: app/app.py
+1 from fastapi import FastAPI
+2 from app.routers import users, teams
+3 
+4 app = FastAPI()
+5 
+6 app.include_router(users.router)
+7 app.include_router(teams.router)
+
+File: requirements.txt
+1 fastapi
+2 sqlalchemy
+3 pydantic
+
+File: .gitignore
+1 __pycache__/
+2 database.db
+
+File: tests/__init__.py
+1 # empty file
+
+File: tests/test_users.py
+1 from fastapi.testclient import TestClient
+2 from app.app import app
+3 
+4 client = TestClient(app)
+5 
+6 def test_register_user():
+7     response = client.post("/register", json={"username": "testuser", "password": "testpassword"})
+8     assert response.status_code == 200
+9     assert response.json()["message"] == "User created successfully"
+10 
+11 def test_read_users():
+12     response = client.get("/users/")
+13     assert response.status_code == 200
+14     assert len(response.json()) > 0
+
+File: tests/test_teams.py
+1 from fastapi.testclient import TestClient
+2 from app.app import app
+3 
+4 client = TestClient(app)
+5 
+6 def test_create_team():
+7     response = client.post("/teams/", json={"name": "testteam"})
+8     assert response.status_code == 200
+9     assert response.json()["message"] == "Team created successfully"
+10 
+11 def test_read_teams():
+12     response = client.get("/teams/")
+13     assert response.status_code == 200
+14     assert len(response.json()) > 0
+
+```
+
+================================== Ai Message ==================================
+
+```
+pip install -r requirements.txt
+uvicorn app.app:app --host 0.0.0.0 --port 8000 &
+pytest tests/
+```

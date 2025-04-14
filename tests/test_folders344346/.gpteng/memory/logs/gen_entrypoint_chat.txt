@@ -1,0 +1,301 @@
+
+2024-06-10T15:44:10.548117
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 note_poster/
+2 requirements.txt
+3 config.py
+4 chrome_driver.py
+5 article_formatter.py
+6 article_elements.py
+7 poster.py
+8 main.py
+
+File: requirements.txt
+1 selenium
+
+File: config.py
+1 # Configuration file
+2 NOTE_USERNAME = 'your_note_username'
+3 NOTE_PASSWORD = 'your_note_password'
+
+File: chrome_driver.py
+1 # Chrome Driver setup
+2 from selenium import webdriver
+3 
+4 def setup_chrome_driver():
+5     """
+6     Set up Chrome Driver
+7     """
+8     options = webdriver.ChromeOptions()
+9     options.add_argument('--headless')
+10     driver = webdriver.Chrome(options=options)
+11     return driver
+
+File: article_formatter.py
+1 # Article formatter
+2 from dataclasses import dataclass
+3 
+4 @dataclass
+5 class Article:
+6     title: str
+7     thumbnail: str
+8     image_files: list
+9     content: str
+10     hashtags: list
+11     price: int
+12     scheduled_time: str
+13     is_paid: bool
+14 
+15 def create_article(title, thumbnail, image_files, content, hashtags, price, scheduled_time, is_paid):
+16     """
+17     Create an Article object
+18     """
+19     return Article(title, thumbnail, image_files, content, hashtags, price, scheduled_time, is_paid)
+
+File: article_elements.py
+1 # Article elements
+2 def insert_title(title):
+3     """
+4     Insert title
+5     """
+6     return f"<h1>{title}</h1>"
+7 
+8 def insert_thumbnail(thumbnail):
+9     """
+10     Insert thumbnail
+11     """
+12     return f"<img src='{thumbnail}' />"
+13 
+14 def insert_image_file(image_file):
+15     """
+16     Insert image file
+17     """
+18     return f"<img src='{image_file}' />"
+19 
+20 def insert_content(content):
+21     """
+22     Insert content
+23     """
+24     return f"<p>{content}</p>"
+
+File: poster.py
+1 # Poster
+2 from selenium.webdriver.common.by import By
+3 from selenium.webdriver.support.ui import WebDriverWait
+4 from selenium.webdriver.support import expected_conditions as EC
+5 from article_formatter import Article
+6 from article_elements import insert_title, insert_thumbnail, insert_image_file, insert_content
+7 
+8 class Poster:
+9     def __init__(self, driver):
+10         self.driver = driver
+11 
+12     def login(self, username, password):
+13         """
+14         Login to Note.com
+15         """
+16         self.driver.get('https://note.com/login')
+17         self.driver.find_element_by_name('username').send_keys(username)
+18         self.driver.find_element_by_name('password').send_keys(password)
+19         self.driver.find_element_by_name('login').click()
+20 
+21     def create_article(self, article):
+22         """
+23         Create an article
+24         """
+25         self.driver.get('https://note.com/new')
+26         self.driver.find_element_by_name('title').send_keys(article.title)
+27         self.driver.find_element_by_name('thumbnail').send_keys(article.thumbnail)
+28         for image_file in article.image_files:
+29             self.driver.find_element_by_name('image_file').send_keys(image_file)
+30         self.driver.find_element_by_name('content').send_keys(insert_title(article.title) + insert_thumbnail(article.thumbnail) + ''.join([insert_image_file(image_file) for image_file in article.image_files]) + insert_content(article.content))
+31         self.driver.find_element_by_name('hashtags').send_keys(','.join(article.hashtags))
+32         self.driver.find_element_by_name('price').send_keys(str(article.price))
+33         self.driver.find_element_by_name('scheduled_time').send_keys(article.scheduled_time)
+34         if article.is_paid:
+35             self.driver.find_element_by_name('is_paid').click()
+36         self.driver.find_element_by_name('post').click()
+37 
+38     def post_article(self, article):
+39         """
+40         Post an article
+41         """
+42         self.login(NOTE_USERNAME, NOTE_PASSWORD)
+43         self.create_article(article)
+
+File: main.py
+1 # Main script
+2 from config import NOTE_USERNAME, NOTE_PASSWORD
+3 from chrome_driver import setup_chrome_driver
+4 from poster import Poster
+5 
+6 def main():
+7     driver = setup_chrome_driver()
+8     poster = Poster(driver)
+9     article = create_article('Test Article', 'https://example.com/thumbnail.jpg', ['image1.jpg', 'image2.jpg'], 'This is a test article.', ['test', 'article'], 1000, '2023-02-20 12:00:00', True)
+10     poster.post_article(article)
+11 
+12 if __name__ == '__main__':
+13     main()
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+
+```bash
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the main script
+python main.py
+```
+
+2024-06-10T15:45:57.779492
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 project/
+2 src/
+3 __init__.py
+4 main.py
+5 models/
+6 __init__.py
+7 user.py
+8 repositories/
+9 __init__.py
+10 user_repository.py
+11 services/
+12 __init__.py
+13 user_service.py
+14 utils/
+15 __init__.py
+16 logger.py
+17 requirements.txt
+
+File: requirements.txt
+1 pytest
+2 dataclasses
+
+File: src/__init__.py
+1 # empty file
+
+File: src/main.py
+1 from src.services.user_service import UserService
+2 
+3 def main():
+4     user_service = UserService()
+5     users = user_service.get_all_users()
+6     for user in users:
+7         print(user)
+8 
+9 if __name__ == "__main__":
+10     main()
+
+File: src/models/__init__.py
+1 # empty file
+
+File: src/models/user.py
+1 from dataclasses import dataclass
+2 
+3 @dataclass
+4 class User:
+5     id: int
+6     name: str
+7     email: str
+
+File: src/repositories/__init__.py
+1 # empty file
+
+File: src/repositories/user_repository.py
+1 from src.models.user import User
+2 
+3 class UserRepository:
+4     def __init__(self):
+5         self.users = [
+6             User(id=1, name="John Doe", email="john@example.com"),
+7             User(id=2, name="Jane Doe", email="jane@example.com"),
+8         ]
+9 
+10     def get_all_users(self):
+11         return self.users
+
+File: src/services/__init__.py
+1 # empty file
+
+File: src/services/user_service.py
+1 from src.repositories.user_repository import UserRepository
+2 
+3 class UserService:
+4     def __init__(self):
+5         self.user_repository = UserRepository()
+6 
+7     def get_all_users(self):
+8         return self.user_repository.get_all_users()
+
+File: src/utils/__init__.py
+1 # empty file
+
+File: src/utils/logger.py
+1 import logging
+2 
+3 def get_logger():
+4     logger = logging.getLogger(__name__)
+5     logger.setLevel(logging.INFO)
+6     return logger
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs the codebase:
+```
+#!/bin/bash
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the code
+python src/main.py
+```
