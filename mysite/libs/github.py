@@ -7,7 +7,7 @@ import requests
 
 def github(token, folder):
     GITHUB_USERNAME = os.getenv("github_user")
-    GITHUB_TOKEN = token or os.getenv("github_token")
+    GITHUB_TOKEN = os.getenv("github_token")
 
     if not GITHUB_USERNAME or not GITHUB_TOKEN:
         print("❌ github_user または github_token が未設定です")
@@ -43,6 +43,7 @@ def github(token, folder):
             auth=(GITHUB_USERNAME, GITHUB_TOKEN),
             json={"name": REPO_NAME, "public": True}
         )
+        print(GITHUB_TOKEN)
         if create.status_code != 201:
             print(f"❌ リポジトリ作成失敗: {create.json()}")
             exit(1)
@@ -83,4 +84,4 @@ def github(token, folder):
 
 
 # 使用例（実行時にtokenを渡す）
-#github("your_actual_github_token", "test_folders")
+github("your_actual_github_token", "test_folders")
