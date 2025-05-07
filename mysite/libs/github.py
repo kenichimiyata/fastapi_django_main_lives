@@ -78,4 +78,4 @@ def github_branch(folder):
 
 # 使用例
 # 
-github_branch("test_folders")
+# github_branch("test_folders")
