@@ -105,7 +105,7 @@ def send_to_google_chat(message: str):
 
 def process_file_and_notify(*args, **kwargs):
     result = process_file(*args, **kwargs)
-    send_to_google_chat(result)
+    #send_to_google_chat(result)
     return result
 
 gradio_interface = gr.Interface(
