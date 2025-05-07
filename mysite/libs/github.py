@@ -4,7 +4,7 @@ import string
 import random
 import datetime
 
-def github(folder):
+def github(token, folder):
     # GitHubユーザー名とトークンを環境変数から取得
     GITHUB_USERNAME = os.getenv("github_user")
     GITHUB_TOKEN = os.getenv("github_token")
@@ -32,6 +32,7 @@ def github(folder):
     # GitHubリポジトリURL
     REPO_URL = f"https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{REPO_NAME}.git"
     WEB_URL = f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}/tree/{branch_name}"
+    print(WEB_URL)
 
     # コマンド実行関数
     def run_command(command, cwd=None):
