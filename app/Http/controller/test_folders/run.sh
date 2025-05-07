@@ -1,4 +1,2 @@
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python api/app/main.py
+python -m pip install --user -r requirements.txt
+python -m uvicorn api.app.main:app --reload

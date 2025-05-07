@@ -9,6 +9,8 @@ class User(Base):
     username = Column(String, unique=True)
     password = Column(String)
     profile = Column(String)
-    tags = Column(String)
+    team_id = Column(Integer, ForeignKey("teams.id"))
+    team = relationship("Team", backref="users")
 
-    teams = relationship("Team", secondary="user_teams")
+    def __repr__(self):
+        return f"User(username={self.username}, profile={self.profile})"

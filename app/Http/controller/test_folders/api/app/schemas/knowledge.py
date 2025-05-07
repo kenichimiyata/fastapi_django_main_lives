@@ -1,7 +1,8 @@
 from pydantic import BaseModel
 
-class TeamSchema(BaseModel):
-    name: str
+class KnowledgeSchema(BaseModel):
+    term: str
+    description: str
     created_at: datetime
 
     class Config:

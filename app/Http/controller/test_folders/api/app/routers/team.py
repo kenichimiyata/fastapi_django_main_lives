@@ -1,16 +1,17 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..models import Team
-from ..schemas import TeamSchema
+from . import models, schemas
 
 router = APIRouter()
 
 @router.post("/teams/")
-async def create_team(team: TeamSchema, session: Session = Depends()):
-    existing_team = session.query(Team).filter_by(name=team.name).first()
-            if existing_team:
-                raise HTTPException(status_code=400, detail="Team name already exists")
-            new_team = Team(name=team.name)
-            session.add(new_team)
-            session.commit()
-            return {"message": "Team created successfully"}
+def create_team(team: schemas.TeamSchema, db: Session = Depends()):
+    db_team = models.Team(name=team.name)
+    db.add(db_team)
+    db.commit()
+    return {"message": "Team created successfully"}
+
+@router.get("/teams/")
+def read_teams(db: Session = Depends()):
+    teams = db.query(models.Team).all()
+    return [{"name": team.name, "created_at": team.created_at} for team in teams]

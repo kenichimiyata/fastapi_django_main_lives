@@ -2,5 +2,9 @@ from pydantic import BaseModel
 
 class UserSchema(BaseModel):
     username: str
+    password: str
     profile: str
-    tags: List[str]
+    team_id: int
+
+    class Config:
+        orm_mode = True
