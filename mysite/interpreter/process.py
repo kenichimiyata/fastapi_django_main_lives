@@ -16,7 +16,7 @@ import json
 from mysite.logger import log_error
 import os
 GENERATION_TIMEOUT_SEC=60
-BASE_PATH = "/home/user/app/controllers/"
+BASE_PATH = "/home/user/app/app/Http/controllercontrollers/"
 
 def set_environment_variables():
     os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1"
