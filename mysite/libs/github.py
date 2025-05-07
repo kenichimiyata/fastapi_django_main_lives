@@ -15,7 +15,7 @@ def github(token, folder):
 
     # 固定リポジトリ名（既に GitHub 上に存在している必要あり）
     REPO_NAME = "gpt-engeneer"
-    controllers_dir = "/home/user/app/controllers"
+    controllers_dir = "/home/user/app/app/Http/controller"
     target_dir = os.path.join(controllers_dir, folder)
 
     if not os.path.isdir(target_dir):
