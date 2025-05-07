@@ -55,7 +55,7 @@ runs:
 	echo -e "y\ny\ny" | poetry run gpt-engineer "/home/user/app/controllers/$(name)" --model Llama3-70b-8192 --temperature 0.1
 run:
 	@echo -e "$(COLOR_CYAN)Running GPT Engineer on $(COLOR_GREEN)$(name)$(COLOR_CYAN) folder...$(COLOR_RESET)" && \
-	cd ./gpt-engineer && poetry run gpt-engineer /home/user/app//home/user/app/app/Http/controller/$(name) --model Llama3-70b-8192 --temperature 0.1
+	cd ./gpt-engineer && poetry run gpt-engineer /home/user/app/app/Http/controller/$(name) --model Llama3-70b-8192 --temperature 0.1
 
 runbabyagi:
 	cd ./babyagi && python babyagi.py $(name)
