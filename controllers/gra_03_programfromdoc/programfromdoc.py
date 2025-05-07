@@ -97,7 +97,7 @@ fastapiはrouter の作成
 """
 
 def send_to_google_chat(message: str):
-    webhook_url = 'https://chat.googleapis.com/v1/spaces/your-space-id/messages?key=your-key&token=your-token'
+    webhook_url = 'https://chat.googleapis.com/v1/spaces/AAAAF_b7vzQ/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=1HJ5FcTko66L0rh_KNoYp4j__ooq5lKmj5aGI8x6vS4'
     headers = {'Content-Type': 'application/json; charset=UTF-8'}
     data = {'text': message}
     response = requests.post(webhook_url, headers=headers, json=data)

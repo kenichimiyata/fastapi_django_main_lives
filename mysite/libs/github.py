@@ -1,52 +1,39 @@
 import os
 import subprocess
-import requests
 import string
 import random
-import shutil
+import datetime
 
-def github(token, folder):
-    # GitHubユーザー名とトークンを環境変数として定義
+def github_branch(folder):
+    # GitHubユーザー名とトークンを環境変数から取得
     GITHUB_USERNAME = os.getenv("github_user")
     GITHUB_TOKEN = os.getenv("github_token")
 
-    # ランダムな文字列を生成する関数
-    def generate_random_string(length=6):
-        letters = string.ascii_lowercase
-        return ''.join(random.choice(letters) for i in range(length))
-
-    # リポジトリ名にランダムな文字列を追加
-    REPO_NAME_BASE = "gpt-engeneer"
-    REPO_NAME = f"{REPO_NAME_BASE}-{folder}-{generate_random_string()}"
-
-    # controllersディレクトリのパス
-    controllers_dir = "/home/user/app/controllers"
-
-    # 指定されたフォルダーのパス
-    target_dir = os.path.join(controllers_dir, folder)
-
-    # 指定されたフォルダー内に新しい .git フォルダーを作成
-    if os.path.isdir(os.path.join(target_dir, ".git")):
-        shutil.rmtree(os.path.join(target_dir, ".git"))
-
-    # GitHub APIを使ってリモートリポジトリを作成
-    response = requests.post(
-        "https://api.github.com/user/repos",
-        auth=(GITHUB_USERNAME, GITHUB_TOKEN),
-        json={"name": REPO_NAME,"public": True}
-    )
-
-    if response.status_code == 201:
-        print(f"Successfully created repository {REPO_NAME}")
-    else:
-        print(f"Failed to create repository: {response.json()}")
+    if not GITHUB_USERNAME or not GITHUB_TOKEN:
+        print("❌ github_user または github_token が未設定です")
         exit(1)
 
-    # リモートリポジトリのURL (HTTPS形式)
-    REPO_URL = f"https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{REPO_NAME}.git"
-    REPO_WEB_URL = f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}"  # リポジトリのWeb URL
+    # 固定リポジトリ名（既に GitHub 上に存在している必要あり）
+    REPO_NAME = "gpt-engeneer"
+    controllers_dir = "/home/user/app/controllers"
+    target_dir = os.path.join(controllers_dir, folder)
 
-    # コマンドを実行するヘルパー関数
+    if not os.path.isdir(target_dir):
+        print(f"❌ 指定フォルダが存在しません: {target_dir}")
+        exit(1)
+
+    # ランダムなブランチ名を作成（例: folder-20250507-ab12f3）
+    def generate_random_string(length=6):
+        return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+    date_part = datetime.datetime.now().strftime("%Y%m%d")
+    branch_name = f"{folder}-{date_part}-{generate_random_string()}"
+
+    # GitHubリポジトリURL
+    REPO_URL = f"https://{GITHUB_USERNAME}:{GITHUB_TOKEN}@github.com/{GITHUB_USERNAME}/{REPO_NAME}.git"
+    WEB_URL = f"https://github.com/{GITHUB_USERNAME}/{REPO_NAME}/tree/{branch_name}"
+
+    # コマンド実行関数
     def run_command(command, cwd=None):
         result = subprocess.run(command, shell=True, text=True, capture_output=True, cwd=cwd)
         if result.returncode != 0:
@@ -55,34 +42,40 @@ def github(token, folder):
         else:
             print(result.stdout)
 
-    # 指定されたフォルダー内でローカルリポジトリを初期化してコミット
-    run_command("git init", cwd=target_dir)
+    # .git がなければ初期化
+    if not os.path.isdir(os.path.join(target_dir, ".git")):
+        run_command("git init", cwd=target_dir)
+        run_command(f"git remote add origin {REPO_URL}", cwd=target_dir)
+        print("📁 git 初期化と origin 追加")
+
+    # 現在の変更をクリーンにする
+    run_command("git reset", cwd=target_dir)
+
+    # 新しいブランチを作成して移動
+    run_command(f"git checkout -b {branch_name}", cwd=target_dir)
+
+    # ステージングとコミット
     run_command("git add -f .", cwd=target_dir)
-    run_command('git commit -m "Initial commit"', cwd=target_dir)
+    run_command(f'git commit -m "Initial commit on branch {branch_name}"', cwd=target_dir)
 
-    # git filter-branchの警告を無視する設定
+    # 機密ファイル（githubs.shなど）を履歴から削除
     os.environ['FILTER_BRANCH_SQUELCH_WARNING'] = '1'
-
-    # コミット履歴から機密情報を削除（必要に応じて修正）
     run_command("git filter-branch --force --index-filter "
                 '"git rm --cached --ignore-unmatch githubs.sh" '
                 "--prune-empty --tag-name-filter cat -- --all", cwd=target_dir)
 
-    # 既存のリモートリポジトリを削除（存在する場合のみ）
-    result = subprocess.run("git remote", shell=True, text=True, capture_output=True, cwd=target_dir)
-    if "origin" in result.stdout:
-        run_command("git remote remove origin", cwd=target_dir)
+    # push 先の origin がなければ追加（すでにチェック済みだが念のため）
+    remotes = subprocess.run("git remote", shell=True, text=True, capture_output=True, cwd=target_dir)
+    if "origin" not in remotes.stdout:
+        run_command(f"git remote add origin {REPO_URL}", cwd=target_dir)
 
-    # 新しいリモートリポジトリを追加して強制プッシュ
-    run_command(f"git remote add origin {REPO_URL}", cwd=target_dir)
-    run_command("git branch -M main", cwd=target_dir)
-    run_command("git push -f origin main", cwd=target_dir)
+    # ブランチを push（強制ではなく通常pushでOK）
+    run_command(f"git push -u origin {branch_name}", cwd=target_dir)
 
-    print(f"Successfully pushed to GitHub repository {REPO_NAME}")
-    print(f"Repository URL: {REPO_WEB_URL}")
-    return REPO_WEB_URL
+    print(f"✅ Successfully pushed to GitHub branch: {branch_name}")
+    print(f"🔗 {WEB_URL}")
+    return WEB_URL
 
 # 使用例
-#token = "your_github_token"
-#folder = "test_folders"
-#github(token, folder)
+# 
+github_branch("test_folders")
