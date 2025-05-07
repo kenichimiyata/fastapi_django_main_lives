@@ -9,6 +9,9 @@
         "console": "integratedTerminal",
         "justMyCode": false
       }
-    ]
+    ] ,
+    "files.exclude": {
+      "**/.git": false
+    }
   }
   
