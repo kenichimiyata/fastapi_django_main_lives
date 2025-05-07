@@ -4,7 +4,7 @@ import string
 import random
 import datetime
 
-def github_branch(folder):
+def github(folder):
     # GitHubユーザー名とトークンを環境変数から取得
     GITHUB_USERNAME = os.getenv("github_user")
     GITHUB_TOKEN = os.getenv("github_token")
