@@ -35,6 +35,10 @@ poetry-install:
 
 #Defines a target named install-pre-commit. This target will install the pre-commit hooks.
 install-pre-commit:
+	export OPENAI_API_BASE="https://api.groq.com/openai/v1/chat/completions"
+	export OPENAI_API_KEY="sk-key-from-open-router"
+	export MODEL_NAME="meta-llama/llama-3-8b-instruct:extended"
+	export LOCAL_MODEL=true
 	@echo -e "$(COLOR_CYAN)Installing pre-commit hooks...$(COLOR_RESET)" && \
 	poetry run pre-commit install
 
@@ -43,6 +47,12 @@ farewell:
 	@echo -e "$(COLOR_GREEN)All done!$(COLOR_RESET)"
 
 #Defines a target named run. This target will run GPT Engineer on the folder with the given name.
+
+
+runs:
+	@echo -e "$(COLOR_CYAN)Running GPT Engineer on $(COLOR_GREEN)$(name)$(COLOR_CYAN)...$(COLOR_RESET)"
+	@cd ./gpt-engineer && \
+	echo -e "y\ny\ny" | poetry run gpt-engineer "/home/user/app/controllers/$(name)" --model Llama3-70b-8192 --temperature 0.1
 run:
 	@echo -e "$(COLOR_CYAN)Running GPT Engineer on $(COLOR_GREEN)$(name)$(COLOR_CYAN) folder...$(COLOR_RESET)" && \
 	cd ./gpt-engineer && poetry run gpt-engineer /home/user/app/controllers/$(name) --model Llama3-70b-8192 --temperature 0.1

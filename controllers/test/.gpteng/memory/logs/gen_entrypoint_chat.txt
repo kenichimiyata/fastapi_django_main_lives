@@ -1,0 +1,233 @@
+
+2025-05-07T15:56:36.603681
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: composer.json
+1 {
+2     "name": "laravel/laravel",
+3     "description": "The Laravel Framework.",
+4     "keywords": ["framework", "laravel"],
+5     "license": "MIT",
+6     "type": "project",
+7     "require": {
+8         "php": "^7.2.5",
+9         "fideloper/proxy": "^4.2",
+10         "fruitcake/laravel-cors": "^2.0",
+11         "guzzlehttp/guzzle": "^7.0.1",
+12         "laravel/framework": "^8.40",
+13         "laravel/laravel
+14         "laravel/sanctum": "^2.11",
+15         "laravel/tinker": "^2.5"
+16     },
+17     "require-dev": {
+18         "facade/ignition": "^2.5",
+19         "fakerphp/faker": "^1.9.1",
+20         "laravel/sail": "^1.0.1",
+21         "mockery/mockery": "^1.4.4",
+22         "nunomaduro/collision": "^5.0",
+23         "phpunit/phpunit": "^9.3.3"
+24     },
+25     "config": {
+26         "optimize-autoloader": true,
+27         "preferred-install": "dist",
+28         "sort-packages": true
+29     },
+30     "extra": {
+31         "laravel": {
+32             "dont-discover": []
+33         }
+34     },
+35     "autoload": {
+36         "psr-4": {
+37             "App\\": "app/",
+38             "Database\\Factories\\": "database/factories",
+39             "Database\\Seeders\\": "database/seeders"
+40         }
+41     },
+42     "autoload-dev": {
+43         "psr-4": {
+44             "Tests\\": "tests/"
+45         }
+46     },
+47     "minimum-stability": "dev",
+48     "prefer-stable": true,
+49     "scripts": {
+50         "post-autoload-dump": [
+51             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+52             "@php artisan package:discover --ansi"
+53         ],
+54         "post-root-package-install": [
+55             "@php -r \"file_exists('composer.lock') || exit(0);\" && exit(0)"
+56         ],
+57         "post-create-project-cmd": [
+58             "@php artisan key:generate --ansi"
+59         ]
+60     }
+61 }
+
+File: app/Models/User.php
+1 namespace App\Models;
+2 
+3 use Illuminate\Database\Eloquent\Model;
+4 use Illuminate\Support\Facades\Hash;
+5 
+6 class User extends Model
+7 {
+8     protected $fillable = [
+9         'name',
+10         'email',
+11         'password',
+12     ];
+13 
+14     protected $hidden = [
+15         'password',
+16         'remember_token',
+17     ];
+18 
+19     public function setPasswordAttribute($value)
+20     {
+21         $this->attributes['password'] = Hash::make($value);
+22     }
+23 }
+
+File: app/Http/Controllers/Auth/RegisterController.php
+1 namespace App\Http\Controllers\Auth;
+2 
+3 use App\Http\Controllers\Controller;
+4 use App\Models\User;
+5 use Illuminate\Support\Facades\Hash;
+6 use Illuminate\Support\Facades\Validator;
+7 use Illuminate\Foundation\Auth\RegistersUsers;
+8 
+9 class RegisterController extends Controller
+10 {
+11     use RegistersUsers;
+12 
+13     protected $redirectTo = '/home';
+14 
+15     public function __construct()
+16     {
+17         $this->middleware('guest');
+18     }
+19 
+20     protected function validator(array $data')
+21     {
+22         return Validator::make($data, [
+23             'name' => ['required', 'string'],
+24             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+25             'password' => ['required', 'string', 'min:8', 'confirmed'],
+26             'password_confirmation' => ['required', 'string', 'min:8'],
+27         ]);
+28     }
+29 
+30     protected function create(array $data)
+31     {
+32         return User::create([
+33             'name' => $data['name'],
+34             'email' => $data['email'],
+35             'password' => Hash::make($data['password']),
+36         ]);
+37     }
+38 }
+
+File: app/Http/Controllers/Auth/LoginController.php
+1 namespace App\Http\Controllers\Auth;
+2 
+3 use App\Http\Controllers\Controller;
+4 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+5 use Illuminate\Support\Facades\Auth;
+6 
+7 class LoginController extends Controller
+8 {
+9     use AuthenticatesUsers;
+10 
+11     protected $redirectTo = '/home';
+12 
+13     public function __construct()
+14     {
+15         $this->middleware('guest')->except('logout');
+16     }
+17 }
+
+File: app/Http/Controllers/HomeController.php
+1 namespace App\Http\Controllers;
+2 
+3 use Illuminate\Http\Request;
+4 
+5 class HomeController extends Controller
+6 {
+7     public function __construct()
+8     {
+9         $this->middleware('auth');
+10     }
+11 
+12     public function index()
+13     {
+14         return view('home');
+15     }
+16 }
+
+File: resources/views/home.blade.php
+1 <!DOCTYPE html>
+2 <html>
+3 <head>
+4     <title>Home</title>
+5 </head>
+6 <body>
+7     <h1>Welcome to the home page!</h1>
+8 </body>
+9 </html>
+
+File: routes/web.php
+1 <?php
+2 
+3 use Illuminate\Support\Facades\Route;
+4 use App\Http\Controllers\HomeController;
+5 use App\Http\Controllers\Auth\RegisterController;
+6 use App\Http\Controllers\Auth\LoginController;
+7 
+8 Route::get('/', function () {
+9     return view('welcome');
+10 });
+11 
+12 Auth::routes();
+13 
+14 Route::get('/home', [HomeController::class, 'index'])->name('home');
+15 
+16 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+17 Route::post('/register', [RegisterController::class, 'register']);
+18 
+19 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+20 Route::post('/login', [LoginController::class, 'login']);
+21 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+22 
+23 This concludes a fully working implementation.
+
+```
+
+================================== Ai Message ==================================
+
+```
+php -d memory_limit=-1 composer install
+php artisan key:generate
+php artisan migrate
+php artisan serve
+```
