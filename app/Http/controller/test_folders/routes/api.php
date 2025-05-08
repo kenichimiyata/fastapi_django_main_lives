@@ -1,0 +1,1 @@
+Route::post('/line', 'LineController@doPost');

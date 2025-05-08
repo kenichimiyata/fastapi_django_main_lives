@@ -1,17 +1,18 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from sqlalchemy.orm import Session
-from . import models, schemas
+from . import models
+from .schemas import TeamCreate, Team
 
 router = APIRouter()
 
 @router.post("/teams/")
-def create_team(team: schemas.TeamSchema, db: Session = Depends()):
+async def create_team(team: TeamCreate):
     db_team = models.Team(name=team.name)
     db.add(db_team)
-    db.commit()
+    await db.commit()
     return {"message": "Team created successfully"}
 
 @router.get("/teams/")
-def read_teams(db: Session = Depends()):
+async def read_teams():
     teams = db.query(models.Team).all()
-    return [{"name": team.name, "created_at": team.created_at} for team in teams]
+    return [Team.from_orm(team) for team in teams]

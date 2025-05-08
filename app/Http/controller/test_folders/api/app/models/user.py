@@ -3,14 +3,15 @@ from sqlalchemy.orm import relationship
 from . import Base
 
 class User(Base):
-    __tablename__ = "users"
-
+    __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True)
     password = Column(String)
     profile = Column(String)
-    team_id = Column(Integer, ForeignKey("teams.id"))
-    team = relationship("Team", backref="users")
+    tags = Column(String)
 
-    def __repr__(self):
-        return f"User(username={self.username}, profile={self.profile})"
+    def __init__(self, password, profile, tags):
+        self.username = username
+        self.password = password
+        self.profile = profile
+        self.tags = tags

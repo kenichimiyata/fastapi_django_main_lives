@@ -424,3 +424,1343 @@ Here is the Unix script that installs dependencies and runs the codebase:
 python -m pip install --user -r requirements.txt
 python -m uvicorn api.app.main:app --reload
 ```
+
+2025-05-07T17:17:05.402710
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 api
+2 app
+3 main.py
+4 models
+5 __init__.py
+6 user.py
+7 team.py
+8 knowledge.py
+9 schemas
+10 __init__.py
+11 user.py
+12 team.py
+13 knowledge.py
+14 routers
+15 __init__.py
+16 user.py
+17 team.py
+18 knowledge.py
+19 requirements.txt
+20 .gitignore
+
+File: api/app/main.py
+1 from fastapi import FastAPI
+2 from routers.user import router as user_router
+3 from routers.team import router as team_router
+4 from routers.knowledge import router as knowledge_router
+5 
+6 app = FastAPI()
+7 
+8 app.include_router(user_router)
+9 app.include_router(team_router)
+10 app.include_router(knowledge_router)
+
+File: api/app/models/__init__.py
+1 from sqlalchemy import create_engine
+2 from sqlalchemy.ext.declarative import declarative_base
+3 from sqlalchemy.orm import sessionmaker
+4 
+5 engine = create_engine('sqlite:///database.db')
+6 Base = declarative_base = declarative_base(bind=engine)
+7 Session = sessionmaker(bind=engine)
+
+File: api/app/models/user.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.orm import relationship
+3 from . import Base
+4 
+5 class User(Base):
+6     __tablename__ = 'users'
+7     id = Column(Integer, primary_key=True)
+8     username = Column(String, unique=True)
+9     password = Column(String)
+10     profile = Column(String)
+11     tags = Column(String)
+12 
+13     def __init__(self, password, profile, tags):
+14         self.username = username
+15         self.password = password
+16         self.profile = profile
+17         self.tags = tags
+
+File: api/app/models/team.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.orm import relationship
+3 from . import Base
+4 
+5 class Team(Base):
+6     __tablename__ = 'teams'
+7     id = Column(Integer, primary_key=True)
+8     name = Column(String, unique=True)
+9     __init__(self, name):
+10         self.name = name
+
+File: api/app/models/knowledge.py
+1 from sqlalchemy import Column, Integer, String
+2 from sqlalchemy.orm import relationship
+3 from . import Base
+4 
+5 class Knowledge(Base):
+6     __tablename__ = 'knowledge'
+7     id = Column(Integer, primary_key=True)
+8     term = Column(String)
+9     description = Column(String)
+10 
+11     def __init__(self, term, description):
+12         self.term = term
+13         self.description = description
+
+File: api/app/routers/user.py
+1 from fastapi import APIRouter, HTTPException
+2 from sqlalchemy.orm import Session
+3 from . import models
+4 from .schemas import UserCreate, User
+5 
+6 router = APIRouter()
+7 
+8 @router.post("/users/")
+9 async def create_user(user: UserCreate):
+10     db_user = models.User(username=user.username, password=user.password, profile=user.profile, tags=user.tags)
+11     db.add(db_user)
+12     await db.commit()
+13     return {"message": "User created successfully"}
+14 
+15 @router.get("/users/")
+16 async def read_users():
+17     users = db.query(models.User").all()
+18     return [User.from_orm(user) in users]
+19 
+20 @router.get("/users/{user_id}")
+21 async def read_user(user_id: int):
+22     user = db.query(models.User).filter(models.User.id == user_id).first()
+23     if user is None:
+24         raise HTTPException(status_code=404, detail="User not found")
+25     return User.from_orm(user)
+
+File: api/app/routers/team.py
+1 from fastapi import APIRouter
+2 from sqlalchemy.orm import Session
+3 from . import models
+4 from .schemas import TeamCreate, Team
+5 
+6 router = APIRouter()
+7 
+8 @router.post("/teams/")
+9 async def create_team(team: TeamCreate):
+10     db_team = models.Team(name=team.name)
+11     db.add(db_team)
+12     await db.commit()
+13     return {"message": "Team created successfully"}
+14 
+15 @router.get("/teams/")
+16 async def read_teams():
+17     teams = db.query(models.Team).all()
+18     return [Team.from_orm(team) for team in teams]
+
+File: api/app/routers/knowledge.py
+1 from fastapi import APIRouter
+2 from sqlalchemy.orm import Session
+3 from . import models
+4 from .schemas import KnowledgeCreate, Knowledge
+5 
+6 router = APIRouter()
+7 
+8 @router.post("/knowledge/")
+9 async def create_knowledge(knowledge: KnowledgeCreate):
+10     db_knowledge = models.Knowledge(term=knowledge.term, description=knowledge.description)
+11     db.add(db_knowledge)
+12     await db.commit()
+13     return {"message": "Knowledge created successfully"}
+14 
+15 @router.get("/knowledge/")
+16 async def read_knowledge():
+17     knowledge = db.query(models.Knowledge).all()
+18     return [Knowledge.from_orm(knowledge) for knowledge in knowledge]
+
+File: api/app/schemas/user.py
+1 from pydantic import BaseModel
+2 
+3 class UserCreate(BaseModel):
+4     username: str
+5     password: str
+6     profile: str
+7     tags: str
+8 
+9 class User(UserCreate):
+10     id: int
+11     username: str
+12     profile: str
+13     tags: str
+
+File: api/app/schemas/team.py
+1 from pydantic import BaseModel
+2 
+3 class TeamCreate(BaseModel):
+4     name: str
+5 
+6 class Team(TeamCreate):
+7     id: int
+8     name: str
+
+File: api/app/schemas/knowledge.py
+1 from pydantic import BaseModel
+2 
+3 class KnowledgeCreate(BaseModel):
+4     term: str
+5     description: str
+6 
+7 class Knowledge(KnowledgeCreate):
+8     id: int
+9     term: str
+10     description: str
+
+File: requirements.txt
+1 fastapi
+2 sqlalchemy
+3 pydantic
+
+File: .gitignore
+1 __pycache__/
+2 database.db
+
+```
+
+================================== Ai Message ==================================
+
+```
+python -m pip install --user -r requirements.txt
+python -m uvicorn api.app.main:app --host 0.0.0.0 --port 8000
+```
+
+2025-05-07T17:19:20.682432
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: .gitignore
+1 /vendor
+2 /node_modules
+3 /.env
+
+File: composer.json
+1 {
+2     "name": "laravel/laravel",
+3     "description": "The Laravel Framework.",
+4     "keywords": ["framework", "laravel"],
+5     "license": "MIT",
+6     "type": "project",
+7     "require": {
+8         "php": "^7.2.5",
+9         "facades/ignition": "^2.5",
+10         "fruitcake/laravel-cors": "^2.0",
+11         "guzzlehttp/guzzle": "^7.0.1",
+12         "laravel/framework": "^8.40",
+13         "laravel/sanctum": "^2.11",
+14         "laravel/tinker": "^2.0",
+15         "laravel/horizon": "^5.7",
+16         "league/flysystem-aws-s3-v3": "^3.0",
+17         "league/mime-type-detector": "^1.5",
+18         "nesbot/carbon": "^2.49,
+19         "nunomaduro/collision": "^5.0",
+20         "phpoffice/phpspreadsheet": "^1.18",
+21         "predis/predis": "^1.1",
+22         "psr/container": "^1.0",
+23         "symfony/deprecation-contracts": "^2.2",
+24         "symfony/http-foundation": "^5.2",
+25         "symfony/routing": "^5.2",
+26         "tightenco/ziggy": "^1.2",
+27         "vlucas/phpdotenv": "^5.3"
+28     },
+29     "require-dev": {
+30         "barryvdh/laravel-ide-helper": "^4.4",
+31         "fakerphp/faker": "^1.9.1",
+32         "laravel/dusk": "^6.18",
+33         "laravel/sail": "^1.0.1",
+34         "mockery/mockery": "^1.4.4",
+35         "nunomaduro/collision": "^5.0",
+36         "phpunit/phpunit": "^9.3.3"
+37     },
+38     "config": {
+39         "optimize-autoloader": true,
+40         "preferred-install": "dist",
+41         "sort-packages": true
+42     },
+43     "extra": {
+44         "laravel": {
+45             "dont-discover": []
+46         }
+47     },
+48     "autoload": {
+49         "psr-4": {
+50             "App\\": "app/",
+51             "Database\\Factories\\": "database/factories/",
+52             "Database\\Seeders\\": "database/seeders/"
+53         }
+54     },
+55     "autoload-dev": {
+56         "psr-4": {
+57             "Tests\\": "tests/"
+58         }
+59     },
+60     "minimum-stability": "dev",
+61     "prefer-stable": true,
+62     "sort-packages": true
+63 }
+
+File: app/Http/Controllers/Auth/RegisterController.php
+1 use App\Http\Controllers\Controller;
+2 use App\Models\User;
+3 use Illuminate\Http\Request;
+4 
+5 class RegisterController extends Controller
+6 {
+7     public function create()
+8     {
+9         return view('register');
+10     }
+11 
+12     public function store(Request $request)
+13     {
+14         $validatedData = $request->validate([
+15             'name' => 'required|string|max:255',
+16             'email' => 'required|string|email|max:255|unique:users',
+17             'password' => 'required|string|min:8|confirmed',
+18         ]);
+19 
+20         $user = User::create($validatedData);
+21 
+22         return redirect()->route('login');
+23     }
+24 }
+
+File: app/Http/Controllers/Auth/LoginController.php
+1 use App\Http\Controllers\Controller;
+2 use Illuminate\Http\Request;
+3 
+4 class LoginController extends Controller
+5 {
+6     public function create()
+7     {
+8         return view('login');
+9     }
+10 
+11     public function store(Request $request)
+12     {
+13         $validatedData = $request->validate([
+14             'email' => 'required|string|email|max:255',
+15             'password' => 'required|string|min:8',
+16         ]);
+17 
+18         if (!auth()->attempt($validatedData)) {
+19             return back()->withErrors(['email' => 'Invalid credentials']);
+20         }
+21 
+22         return redirect()->route('users.index');
+23     }
+24 }
+
+File: app/Http/Controllers/UserController.php
+1 use App\Http\Controllers\Controller;
+2 use App\Models\Team;
+3 use App\Models\User;
+4 use Illuminate\Http\Request;
+5 
+6 class UserController extends Controller
+7 {
+8     public function index()
+9     {
+10         $users = User::latest()->get();
+11 
+12         return view('users', compact('users'));
+13     }
+14 
+15     public function show(User $user)
+16     {
+17         return view('users.show', compact('user'));
+18     }
+19 
+20     public function update(Request $request, User $user)
+21     {
+22         $validatedData = $request->validate([
+23             'team_id' => 'required',
+24             'profile' => 'required|string',
+25             'tags' => 'required|array',
+26         ]);
+27 
+28         $user->update($validatedData);
+29 
+30         return redirect()->route('users.index');
+31     }
+32 }
+
+File: app/Http/Controllers/TeamController.php
+1 use App\Http\Controllers\Controller;
+2 use App\Models\Team;
+3 use Illuminate\Http\Request;
+4 
+5 class TeamController extends Controller
+6 {
+7     public function index()
+8     {
+9         $teams = Team::latest()->get();
+10 
+11         return view('teams', compact('teams'));
+12     }
+13 
+14     public function store(Request $request)
+15     {
+16         $validatedData = $request->validate([
+17             'name' => 'required|string|max:255',
+18         ]);
+19 
+20         Team::create($validatedData);
+21 
+22         return redirect()->route('teams.index');
+23     }
+24 }
+
+File: app/Models/User.php
+1 use Illuminate\Database\Eloquent\Model;
+2 use Illuminate\Support\Facades\Storage;
+3 
+4 class User extends Model
+5 {
+6     protected $fillable = [
+7         'name',
+8         'email',
+9         'team_id',
+10         'profile',
+11         'tags',
+12     ];
+13 
+14     public function team()
+15     {
+16         return $this->belongsTo(Team::class);
+17     }
+18 }
+
+File: app/Models/Team.php
+1 use Illuminate\Database\Eloquent\Model;
+2 
+3 class Team extends Model
+4 {
+5     protected $fillable = [
+6         'name',
+7     ];
+8 }
+
+File: app/Http/Controllers/LineController.php
+1 use App\Http\Controllers\Controller;
+2 use Illuminate\Http\Request;
+3 use Illuminate\Support\Facades\Storage;
+4 use League\Flysystem\AwsS3v3\AwsS3Adapter;
+5 
+6 class LineController extends Controller
+7 {
+8     public function doPost(Request $request)
+9     {
+10         $type = $request->input('type');
+11 
+12         if ($type === 'image') {
+13             $file = $request->file('file');
+14             $filename = $file->getClientOriginalName();
+15             $filePath = $file->getPathname();
+16 
+17             Storage::disk('local')->put($filename, file_get_contents($filePath);
+18 
+19             $adapter = new AwsS3Adapter(
+20                 new \Aws\S3\S3Client([
+21                         'version' => 'latest',
+22                         'region' => 'your-region',
+23                         'credentials' => [
+24                             'key' => 'your-key',
+25                             'secret' => 'your-secret-key',
+26                         ],
+27                     ]),
+28                     'your-bucket-name',
+29                     'your-prefix'
+30                 );
+31 
+32             $adapter->write($filename, file_get_contents($filePath));
+33 
+34             return response()->json(['message' => 'Image uploaded successfully']);
+35         }
+36 
+37         return response()->json(['message' => 'Invalid request']);
+38     }
+39 }
+
+File: routes/api.php
+1 Route::post('/line', 'LineController@doPost');
+
+File: database/migrations/2023_02_20_000000_users_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateUsersTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('users', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->string('email')->unique();
+12             $table->string('password');
+13             $table->integer('team_id')->nullable();
+14             $table->text('profile')->nullable();
+15             $table->text('tags')->nullable();
+16             $table->timestamps();
+17         });
+18     }
+19 
+20     public function down()
+21     {
+22         Schema::dropIfExists('users');
+23     }
+24 }
+
+File: database/migrations/2023_02_20_000001_teams_table.php
+1 use Illuminate\Database\Migrations\Migration;
+2 use Illuminate\Database\Schema\Blueprint;
+3 
+4 class CreateTeamsTable extends Migration
+5 {
+6     public function up()
+7     {
+8         Schema::create('teams', function (Blueprint $table) {
+9             $table->id();
+10             $table->string('name');
+11             $table->timestamps();
+12         });
+13     }
+14 
+15     public function down()
+16     {
+17         Schema::dropIfExists('teams');
+18     }
+19 }
+
+```
+
+================================== Ai Message ==================================
+
+```
+#!/bin/bash
+
+composer install
+php artisan migrate
+php artisan serve
+```
+
+2025-05-08T01:33:47.100198
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 app
+2 config
+3 Http
+4 Controllers
+5 CameraController.php
+6 TrustDogApiController.php
+7 WebhookController.php
+8 Models
+9 Eoc.php
+10 ServiceUser.php
+11 TrustDogApi.php
+12 Requests
+13 WebhookRequest.php
+14 routes
+15 web.php
+16 app.php
+17 config
+18 database.php
+19 seeds
+20 DatabaseSeeder.php
+21 composer.json
+22 README.md
+23 public
+24 index.php
+25 storage
+26 app
+27 public
+28 tests
+29 Feature
+30 CameraTest.php
+31 TrustDogApiTest.php
+32 WebhookTest.php
+33 Unit**
+34 EocTest.php
+35 TrustDogApiTest.php
+36 WebhookTest.php
+
+File: composer.json
+1 {
+2     "name": "laravel/laravel",
+3     "description": "Laravel Framework",
+4     "keywords": ["framework", "laravel"],
+5     "license": "MIT",
+6     "require": {
+7         "php": "^7.2.5",
+8         "fideloper/proxy": "^4.2",
+9         "fruitcake/laravel-cors": "^2.0",
+10         "guzzlehttp/guzzle": "^7.0.1",
+11         "laravel/framework": "^8.40",
+12         "laravel/tinker": "^2.5"
+13     },
+14     "require-dev": {
+15         "facade/ignition": "^2.5",
+16         "fakerphp/faker": "^1.9.1",
+17         "laravel/sail": "^1.0.1",
+18         "mockery/mockery": "^1.4.4",
+19         "nunomaduro/collision": "^5.0",
+20         "phpunit/phpunit": "^9.3.3"
+21     },
+22     "config": {
+23         "optimize-autoloader": true,
+24         "preferred-install": "dist",
+25         "sort-packages": true
+26     },
+27     "minimum-stability": "dev",
+28     "prefer-stable": true,
+29     "scripts": {
+30         "post-autoload-dump": "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+31         "post-root-package-install": [
+32             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+33         ],
+34         "post-create-project-cmd": [
+35             "@php artisan key:generate --ansi"
+36         ]
+37     }
+38 }
+
+File: app/Http/Controllers/CameraController.php
+1 <?php
+2 
+3 namespace App\Http\Controllers;
+4 
+5 use Illuminate\Http\Request;
+6 use App\Models\ServiceUser;
+7 
+8 class CameraController extends Controller
+9 {
+10     /**
+11      * Create a new controller instance.
+12      *
+13      * @return void
+14      */
+15     public function __construct()
+16     {
+17         //
+18     }
+19 
+20     /**
+21      * Launch camera app and get ID.
+22      *
+23      * @return \Illuminate\Http\Response
+24      */
+25     public function launchCameraApp()
+26     {
+27         // Launch camera app and get ID
+28         $id = 'some_id';
+29 
+30         // Register ID to service_user table
+31         $serviceUser = new ServiceUser();
+32         $serviceUser->id = $id;
+33         $serviceUser->save();
+34 
+35         return response()->json(['message' => 'Camera app launched successfully']);
+36     }
+37 }
+
+File: app/Http/Controllers/TrustDogApiController.php
+1 <?php
+2 
+3 namespace App\Http\Controllers;
+4 
+5 use Illuminate\Http\Request;
+6 use App\Models\TrustDogApi;
+7 
+8 class TrustDogApiController extends Controller
+9 {
+10     /**
+11      * Create a new controller instance.
+12      *
+13      * @return void
+14      */
+15     public function __construct()
+16     {
+17         //
+18     }
+19 
+20     /**
+21      * Get data from TrustDog API.
+22      *
+23      * @return \Illuminate\Http\Response
+24      */
+25     public function getDataFromTrustDogApi()
+26     {
+27         // Get data from TrustDog API
+28         $data = 'some_data';
+29 
+30         // Register data to service_user table
+31         $serviceUser = new ServiceUser();
+32         $serviceUser->data = $data;
+33         $serviceUser->save();
+34 
+35         return response()->json(['message' => 'Data retrieved successfully']);
+36     }
+37 }
+
+File: app/Http/Controllers/WebhookController.php
+1 <?php
+2 
+3 namespace App\Http\Controllers;
+4 
+5 use Illuminate\Http\Request;
+6 use App\Models\Eoc;
+7 use App\Models\ServiceUser;
+8 
+9 class WebhookController extends Controller
+10 {
+11     /**
+12      * Create a new controller instance.
+13      *
+14      * @return void
+15      */
+16     public function __construct()
+17     {
+18         //
+19     }
+20 
+21     /**
+22      * Handle webhook request.
+23      *
+24      * @param  \Illuminate\Http\Request  $request
+25      * @return \Illuminate\Http\Response
+26      */
+27     public function handleWebhookRequest(Request $request)
+28     {
+29         // Get data from webhook request
+30         $data = $request->all();
+31 
+32         // Register data to eoc table
+33         $eoc = new Eoc();
+34         $eoc->data = $data;
+35         $eoc->save();
+36 
+37         // Get service user data
+38         $serviceUser = ServiceUser::where('id', $data['id'])->first();
+39 
+40         // Update service user data
+41         $serviceUser->data = $data;
+42         $serviceUser->save();
+43 
+44         return response()->json(['message' => 'Webhook request handled successfully']);
+45     }
+46 }
+
+File: app/Models/Eoc.php
+1 <?php
+2 
+3 namespace App\Models;
+4 
+5 use Illuminate\Database\Eloquent\Model;
+6 
+7 class Eoc extends Model
+8 {
+9     /**
+10      * The table associated with the model.
+11      *
+12      * @var string
+13      */
+14     protected $table = 'eoc';
+15 
+16     /**
+17      * The attributes that are mass assignable.
+18      *
+19      * @var array
+20      */
+21     protected $fillable = [
+22         'data',
+23     ];
+24 }
+
+File: app/Models/ServiceUser.php
+1 <?php
+2 
+3 namespace App\Models;
+4 
+5 use Illuminate\Database\Eloquent\Model;
+6 
+7 class ServiceUser extends Model
+8 {
+9     /**
+10      * The table associated with the model.
+11      *
+12      * @var string
+13      */
+14     protected $table = 'service_user';
+15 
+16     /**
+17      * The attributes that are mass assignable.
+18      *
+19      * @var array
+20      */
+21     protected $fillable = [
+22         'id',
+23         'data',
+24     ];
+25 }
+
+File: app/Models/TrustDogApi.php
+1 <?php
+2 
+3 namespace App\Models;
+4 
+5 use Illuminate\Database\Eloquent\Model;
+6 
+7 class TrustDogApi extends Model
+8 {
+9     /**
+10      * The table associated with the model.
+11      *
+12      * @var string
+13      */
+14     protected $table = 'trust_dog_api';
+15 
+16     /**
+17      * The attributes that are mass assignable.
+18      *
+19      * @var array
+20      */
+21     protected $fillable = [
+22         'data',
+23     ];
+24 }
+
+File: app/Http/Requests/WebhookRequest.php
+1 <?php
+2 
+3 namespace App\Http\Requests;
+4 
+5 use Illuminate\Foundation\Http\FormRequest;
+6 
+7 class WebhookRequest extends FormRequest
+8 {
+9     /**
+10      * Determine if the user is authorized to make this request.
+11      *
+12      * @return bool
+13      */
+14     public function authorize()
+15     {
+16         return true;
+17     }
+18 
+19     /**
+20      * Get the validation rules that apply to the request.
+21      *
+22      * @return array
+23      */
+24     public function rules()
+25     {
+26         return [
+27             'id' => 'required',
+28             'data' => 'required',
+29         ];
+30     }
+31 }
+
+File: routes/web.php
+1 <?php
+2 
+3 use Illuminate\Support\Facades\Route;
+4 
+5 Route::post('/camera/launch', 'CameraController@launchCameraApp');
+6 Route::get('/trust-dog-api/data', 'TrustDogApiController@getDataFromTrustDogApi');
+7 Route::post('/webhook', 'WebhookController@handleWebhookRequest');
+
+File: database/seeds/DatabaseSeeder.php
+1 <?php
+2 
+3 namespace Database\Seeders;
+4 
+5 use Illuminate\Database\Seeder;
+6 use App\Models\Eoc;
+7 use App\Models\ServiceUser;
+8 use App\Models\TrustDogApi;
+9 
+10 class DatabaseSeeder extends Seeder
+11 {
+12     /**
+13      * Run the database seeds.
+14      *
+15      * @return void
+16      */
+17     public function run()
+18     {
+19         // Seed eoc table
+20         Eoc::factory()->count(10)->create();
+21 
+22         // Seed service_user table
+23         ServiceUser::factory()->count(10)->create();
+24 
+25         // Seed trust_dog_api table
+26         TrustDogApi::factory()->count(10)->create();
+27     }
+28 }
+
+File: tests/Feature/CameraTest.php
+1 <?php
+2 
+3 namespace Tests\Feature;
+4 
+5 use Tests\TestCase;
+6 use App\Http\Controllers\CameraController;
+7 
+8 class CameraTest extends TestCase
+9 {
+10     /**
+11      * Test launch camera app.
+12      *
+13      * @return void
+14      */
+15     public function testLaunchCameraApp()
+16     {
+17         $response = $this->post('/camera/launch');
+18 
+19         $response->assertStatus(200);
+20     }
+21 }
+
+File: tests/Feature/TrustDogApiTest.php
+1 <?php
+2 
+3 namespace Tests\Feature;
+4 
+5 use Tests\TestCase;
+6 use App\Http\Controllers\TrustDogApiController;
+7 
+8 class TrustDogApiTest extends TestCase
+9 {
+10     /**
+11      * Test get data from TrustDog API.
+12      *
+13      * @return void
+14      */
+15     public function testGetDataFromTrustDogApi()
+16     {
+17         $response = $this->get('/trust-dog-api/data');
+18 
+19         $response->assertStatus(200);
+20     }
+21 }
+
+File: tests/Feature/WebhookTest.php
+1 <?php
+2 
+3 namespace Tests\Feature;
+4 
+5 use Tests\TestCase;
+6 use App\Http\Controllers\WebhookController;
+7 
+8 class WebhookTest extends TestCase
+9 {
+10     /**
+11      * Test handle webhook request.
+12      *
+13      * @return void
+14      */
+15     public function testHandleWebhookRequest()
+16     {
+17         $response = $this->post('/webhook', [
+18             'id' => 'some_id',
+19             'data' => 'some_data',
+20         ]);
+21 
+22         $response->assertStatus(200);**
+23     }
+24 }
+
+File: tests/Unit/EocTest.php
+1 <?php
+2 
+3 namespace Tests\Unit;
+4 
+5 use Tests\TestCase;
+6 use App\Models\Eoc;
+7 
+8 class EocTest extends TestCase
+9 {
+10     /**
+11      * Test eoc model.
+12      *
+13      * @return void
+14      */
+15     public function testCreateEoc()
+16     {
+17         $eoc = new Eoc();
+18         $this->assertInstanceOf(Eoc::class, $eoc);
+19     }
+20 }
+
+File: tests/Unit/ServiceUserTest.php
+1 <?php
+2 
+3 namespace Tests\Unit;
+4 
+5 use Tests\TestCase;
+6 use App\Models\ServiceUser;
+7 
+8 class ServiceUserTest extends TestCase
+9 {
+10     /**
+11      * Test service user model.
+12      *
+13      * @return void
+14      */
+15     public function testCreateServiceUser()
+16     {
+17         $serviceUser = new ServiceUser();
+18         $this->assertInstanceOf(ServiceUser::class, $serviceUser);
+19     }
+20 }
+
+File: tests/Unit/TrustDogApiTest.php
+1 <?php
+2 
+3 namespace Tests\Unit;
+4 
+5 use Tests\TestCase;
+6 use App\Models\TrustDogApi;
+7 
+8 class TrustDogApiTest extends TestCase
+9 {
+10     /**
+11      * Test trust dog api model.
+12      *
+13      * @return void
+14      */
+15     public function testCreateTrustDogApi()
+16     {
+17         $trustDogApi = new TrustDogApi();
+18         $this->assertInstanceOf(TrustDogApi::class, $trustDogApi);
+19     }
+20 }
+
+File: tests/Unit/WebhookTest.php
+1 <?php
+2 
+3 namespace Tests\Unit;
+4 
+5 use Tests\TestCase;
+6 use App\Http\Controllers\WebhookController;
+7 
+8 class WebhookTest extends TestCase
+9 {
+10     /**
+11      * Test webhook controller.
+12      *
+13      * @return void
+14      */
+15     public function testWebhookController()
+16     {
+17         $webhookController = new WebhookController();
+18         $this->assertInstanceOf(WebhookController::class, $webhookController);
+19     }
+20 }
+
+```
+
+================================== Ai Message ==================================
+
+Here is the Unix script that installs dependencies and runs all necessary parts of the codebase in parallel if necessary:
+
+```
+#!/bin/bash
+
+# Install dependencies
+php composer.phar install
+
+# Run database seeds
+php artisan db:seed
+
+# Run tests
+php artisan test
+```
+
+2025-05-08T01:39:16.727504
+================================ System Message ================================
+
+You will get information about a codebase that is currently on disk in the current folder.
+The user will ask you to write a script that runs the code in a specific way.
+You will answer with code blocks that include all the necessary terminal commands.
+Do not install globally. Do not use sudo.
+Do not explain the code, just give the commands.
+Do not use placeholders, use example values (like . for a folder argument) if necessary.
+
+
+================================ Human Message =================================
+
+
+        Make a unix script that
+        a) installs dependencies
+        b) runs all necessary parts of the codebase (in parallel if necessary)
+        
+Information about the codebase:
+
+```
+File: Structure
+1 laravel-trustdog
+2 app
+3 Http
+4 Controllers
+5 TrustdogController.php
+6 Webhooks
+7 TrustdogWebhookController.php
+8 Models
+9 ServiceUser.php
+10 Eoc.php
+11 Traits
+12 TrustdogTrait.php
+13 Events
+14 TrustdogEvent.php
+15 Listeners
+16 TrustdogListener.php
+17 routes
+18 web.php
+19 api.php
+20 kernel.php
+21 Console
+22 Commands
+23 TrustdogCommand.php
+24 Kernel.php
+25 Exceptions
+26 Handler.php
+27 Http
+28 Middleware
+29 TrustdogMiddleware.php
+30 Providers
+31 TrustdogServiceProvider.php
+32 public
+33 index.php
+34 resources
+35 views**
+36 mermaid.md
+37 README.md
+38 composer.json
+39 phpunit.xml
+40 Makefile
+41 requirements.txt
+
+File: app/Http/Controllers/TrustdogController.php
+1 <?php
+2 
+3 namespace App\Http\Controllers;
+4 
+5 use Illuminate\Http\Request;
+6 use App\Models\ServiceUser;
+7 use App\Traits\TrustdogTrait;
+8 
+9 class TrustdogController extends Controller
+10 {
+11     /**
+12      * @param Request $request
+13      * @return \Illuminate\Http\Response
+14      */
+15     public function index(Request $request)
+16     {
+17         // Get service user from Trustdog API
+18         $serviceUser = $this->getServiceUserFromApi();
+19 
+20         // Register service user in database
+21         $serviceUserModel = new ServiceUser();
+22         $serviceUserModel->fill($serviceUser);
+23         $serviceUserModel->save();
+24 
+25         // Return response
+26         return response()->json(['message' => 'Service user registered successfully']);
+27     }
+28 
+29     /**
+30      * @return array
+31      */
+32     private function getServiceUserFromApi()
+33     {
+34         // Implement API call to get service user
+35         // For demonstration purposes, return a dummy array
+36         return [
+37             'id' => 1,
+38             'name' => 'John Doe',
+39             'email' => 'johndoe@example.com'
+40         ];
+41     }
+42 }
+43 
+44 **app/Http/Webhooks/TrustdogWebhookController.php**
+
+File: app/Models/ServiceUser.php
+1 <?php
+2 
+3 namespace App\Models;
+4 
+5 use Illuminate\Database\Eloquent\Model;
+6 
+7 class ServiceUser extends Model
+8 {
+9     protected $fillable = [
+10         'id',
+11         'name',
+12         'email',
+13     ];
+14 }
+15 
+16 **app/Models/Eoc.php**
+
+File: app/Traits/TrustdogTrait.php
+1 <?php
+2 
+3 namespace App\Traits;
+4 
+5 trait TrustdogTrait
+6 {
+7     /**
+8      * @return array
+9      */
+10     private function getServiceUserFromApi()
+11     {
+12         // Implement API call to get service user
+13         // For demonstration purposes, return a dummy array
+14         return [
+15             'id' => 1,
+16             'name' => 'John Doe',
+17             'email' => 'johndoe@example.com',
+18         ];
+19     }
+20 }
+21 
+22 **app/Events/TrustdogEvent.php**
+
+File: app/Listeners/TrustdogListener.php
+1 <?php
+2 
+3 namespace App\Listeners;
+4 
+5 use App\Events\TrustdogEvent;
+6 use Illuminate\Queue\InteractsWithQueue;
+7 use Illuminate\Contracts\Queue\ShouldQueue;
+8 
+9 class TrustdogListener
+10 {
+11     use InteractsWithQueue;
+12 
+13     /**
+14      * Handle the event.
+15      *
+16      * @param  TrustdogEvent  $event
+17      * @return void
+18      */
+19     public function handle(TrustdogEvent $event)
+20     {
+21         // Implement logic to process service user data
+22         // For demonstration purposes, log a message
+23         \Log::info('Service user data processed successfully');
+24     }
+25 }
+26 
+27 **routes/web.php**
+
+File: 'TrustdogController@index');
+1 **routes/api.php**
+
+File: 'TrustdogWebhookController@handleWebhook');
+1 **kernel.php**
+
+File: \App\Http\Middleware\TrustdogMiddlewareclass,
+1 **Console/Kernel.php**
+
+File: ];
+1 **Console/Commands/TrustdogCommand.php**
+
+File: }
+1 **mermaid.md**
+
+File: install
+1 **composer.json**
+
+```
+
+================================== Ai Message ==================================
+
+Here is the script that installs dependencies and runs the necessary parts of the codebase:
+
+```bash
+#!/bin/bash
+
+# Install dependencies
+php composer.phar install
+
+# Run the Laravel application
+php artisan serve
+```
+
+Note: This script assumes that the Laravel application is the main entry point of the codebase. If there are other parts of the codebase that need to be run, additional commands may be necessary.

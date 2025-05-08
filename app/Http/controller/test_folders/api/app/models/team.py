@@ -3,11 +3,8 @@ from sqlalchemy.orm import relationship
 from . import Base
 
 class Team(Base):
-    __tablename__ = "teams"
-
+    __tablename__ = 'teams'
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    def __repr__(self):
-        return f"Team(name={self.name}, created_at={self.created_at})"
+    __init__(self, name):
+        self.name = name

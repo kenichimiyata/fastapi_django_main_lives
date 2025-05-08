@@ -1,9 +1,10 @@
 from pydantic import BaseModel
 
-class KnowledgeSchema(BaseModel):
+class KnowledgeCreate(BaseModel):
     term: str
     description: str
-    created_at: datetime
 
-    class Config:
-        orm_mode = True
+class Knowledge(KnowledgeCreate):
+    id: int
+    term: str
+    description: str

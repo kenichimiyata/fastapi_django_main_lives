@@ -1,8 +1,8 @@
 from pydantic import BaseModel
 
-class TeamSchema(BaseModel):
+class TeamCreate(BaseModel):
     name: str
-    created_at: datetime
 
-    class Config:
-        orm_mode = True
+class Team(TeamCreate):
+    id: int
+    name: str
