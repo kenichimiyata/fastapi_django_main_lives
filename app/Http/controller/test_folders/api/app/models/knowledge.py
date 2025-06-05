@@ -1,13 +1,11 @@
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
-from . import Base
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 class Knowledge(Base):
-    __tablename__ = 'knowledge'
+    __tablename__ = "knowledge"
     id = Column(Integer, primary_key=True)
-    term = Column(String)
+    term = Column(String, nullable=False)
     description = Column(String)
-
-    def __init__(self, term, description):
-        self.term = term
-        self.description = description
+    created_at = Column(DateTime, default=datetime.utcnow)

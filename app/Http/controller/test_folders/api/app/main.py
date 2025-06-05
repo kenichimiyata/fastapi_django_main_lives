@@ -1,10 +1,8 @@
 from fastapi import FastAPI
-from routers.user import router as user_router
-from routers.team import router as team_router
-from routers.knowledge import router as knowledge_router
+from routers import user, team, knowledge
 
 app = FastAPI()
 
-app.include_router(user_router)
-app.include_router(team_router)
-app.include_router(knowledge_router)
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the API"}

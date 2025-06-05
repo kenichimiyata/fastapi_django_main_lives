@@ -1,1 +1,2 @@
-Route::post('/line', 'LineController@doPost');
+Route::post('/photo-judge', 'OcrController@store');
+Route::get('/photo-judge', 'OcrController@index');

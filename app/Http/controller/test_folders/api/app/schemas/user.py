@@ -1,13 +1,10 @@
 from pydantic import BaseModel
 
-class UserCreate(BaseModel):
+class UserSchema(BaseModel):
     username: str
     password: str
     profile: str
     tags: str
+    team_id: int
 
-class User(UserCreate):
-    id: int
-    username: str
-    profile: str
-    tags: str
+**api/app/schemas/team.py**
