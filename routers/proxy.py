@@ -1,33 +1,22 @@
+from fastapi import APIRouter, Request, HTTPException
 import httpx
-#from fastapi import FastAPI, Request
 
+LARAVEL_URL = "http://localhost:8000"
 
-import requests
-import json
-import os
-# current_user: User = Depends(get_current_active_user)):
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
-# current_user: User = Depends(get_current_active_user)):
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+router = APIRouter(prefix="/gradios", tags=["gradios"])
 
-from fastapi import APIRouter, HTTPException
-from gradio_client import Client
-
-#router = APIRouter()
-router = APIRouter(prefix="/gradio", tags=["gradio"])
-@router.get("/route/proxy")
-
-#LARAVEL_URL="http://localhost:8000"
-LARAVEL_URL="http://localhost:8000"
-
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@router.api_route("/route/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy(request: Request, path: str):
-    client = httpx.AsyncClient()
-    req_data = await request.body()
-    proxied = await client.request(
-        request.method,
-        f"{LARAVEL_URL}/{path}",
-        headers=request.headers.raw,
-        content=req_data
-    )
-    return proxied.text
+    async with httpx.AsyncClient() as client:
+        req_data = await request.body()
+        try:
+            proxied = await client.request(
+                request.method,
+                f"{LARAVEL_URL}/{path}",
+                headers=request.headers.raw,
+                content=req_data
+            )
+            # ステータスコードやヘッダも引き継ぎたい場合は調整してください
+            return proxied.text
+        except httpx.RequestError as e:
+            raise HTTPException(status_code=500, detail=f"Request proxy failed: {str(e)}")
