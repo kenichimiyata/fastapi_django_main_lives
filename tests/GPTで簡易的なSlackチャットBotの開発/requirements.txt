@@ -1,3 +1,0 @@
-python-dotenv
-slack-sdk
-transformers
