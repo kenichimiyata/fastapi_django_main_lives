@@ -139,4 +139,4 @@ cython_debug/
 
 #staticfiles/
 core.*
-composer.phar
+
