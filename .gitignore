@@ -8,6 +8,28 @@ __pycache__/
 .env.local
 .env.*.local
 
+# Temporary and debug files
+aaa*.txt
+ccc*.txt
+debug_*.py
+test_*.py
+*debug*.log
+diagnostic_*.py
+minimal_*.py
+simple_*.py
+web_debug*.py
+chat_debug*.py
+
+# Obsolete files
+*.phar
+*.tgz
+*.ps1
+hist*.txt
+git*.txt
+clean.txt
+interpreter_test.txt
+test_output.txt
+
 # C extensions
 *.so
 *.wav
