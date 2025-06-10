@@ -3,10 +3,11 @@ title: FastAPI Django Main Live
 emoji: 🚀
 colorFrom: blue
 colorTo: purple
-sdk: docker
+sdk: gradio
+sdk_version: 5.0.1
+app_file: app.py
 pinned: false
 license: mit
-app_port: 7860
 ---
 
 # FastAPI Django with Groq AI Integration & VS Code Debug Environment
