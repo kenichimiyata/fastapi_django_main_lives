@@ -3,7 +3,7 @@ import uvicorn
 import asyncio
 from pyngrok import ngrok, conf
 import threading
-
+#
 # 設定
 FASTAPI_PORT = 7861
 NGROK_AUTHTOKEN = "2fAuM2mXP4rwyzcb6T7EjY8zkL6_4mkaaSLXVpf1enNc8c3Ff"

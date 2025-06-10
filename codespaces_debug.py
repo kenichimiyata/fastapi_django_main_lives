@@ -1,6 +1,6 @@
 """
 完全動作版 FastAPI Debug Toolbar - 修正版
-StreamingResponse対応バージョン
+StreamingResponse対応バージョン + Hugging Face リポジトリ取得機能
 """
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, Response
@@ -11,7 +11,14 @@ import asyncio
 from datetime import datetime
 from starlette.types import Message
 
-app = FastAPI(title="FastAPI Debug Toolbar", description="Laravel風デバッグバー")
+# Hugging Face クライアントをインポート
+try:
+    from huggingface_client import HuggingFaceRepoClient
+    HF_CLIENT_AVAILABLE = True
+except ImportError:
+    HF_CLIENT_AVAILABLE = False
+
+app = FastAPI(title="FastAPI Debug Toolbar", description="Laravel風デバッグバー + Hugging Face連携")
 
 # CORS設定
 app.add_middleware(
@@ -249,6 +256,7 @@ async def home():
                     <a href="/api/users" class="button">👥 Users API</a>
                     <a href="/debug/dashboard" class="button">📊 Debug Dashboard</a>
                     <a href="/debug/clear" class="button">🗑️ Clear Debug Data</a>
+                    <a href="/huggingface" class="button">🤗 HF Repository</a>
                 </div>
             </div>
         </div>
@@ -472,6 +480,178 @@ async def clear_debug_data():
     debug_data["requests"].clear()
     debug_data["queries"].clear()
     return {"message": "Debug data cleared", "status": "success"}
+
+@app.get("/huggingface", response_class=HTMLResponse)
+async def huggingface_repo_viewer():
+    """Hugging Face リポジトリ情報表示ページ"""
+    if not HF_CLIENT_AVAILABLE:
+        return """
+        <html><body>
+        <h1>❌ Hugging Face Client not available</h1>
+        <p>huggingface_client.py が見つかりません</p>
+        </body></html>
+        """
+    
+    mock_query("SELECT * FROM hf_repos", 0.03)
+    
+    client = HuggingFaceRepoClient()
+    repo_id = "kenken999/fastapi_django_main_live"
+    
+    # リポジトリ情報取得
+    repo_info = client.get_repo_info(repo_id, "space")
+    files = client.list_files(repo_id, "space")
+    commits = client.get_commit_history(repo_id, "space")
+    
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Hugging Face Repository Viewer</title>
+        <meta charset="utf-8">
+        <style>
+            body {{ 
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                margin: 0; 
+                padding: 20px; 
+                background: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+                min-height: 100vh;
+                color: #333;
+            }}
+            .container {{ 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                background: white; 
+                border-radius: 12px; 
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                overflow: hidden;
+            }}
+            .header {{ 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white; 
+                padding: 30px;
+                text-align: center;
+            }}
+            .header h1 {{ margin: 0; font-size: 2.5em; font-weight: 300; }}
+            .nav {{ 
+                background: #f8f9fa; 
+                padding: 15px 30px; 
+                border-bottom: 1px solid #eee;
+            }}
+            .nav a {{ 
+                color: #667eea; 
+                text-decoration: none; 
+                margin-right: 20px; 
+                font-weight: 500;
+                transition: color 0.2s;
+            }}
+            .nav a:hover {{ color: #764ba2; }}
+            .content {{ padding: 30px; }}
+            .grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }}
+            .card {{ 
+                background: #f8f9fa; 
+                padding: 25px; 
+                border-radius: 8px; 
+                border-left: 4px solid #667eea;
+            }}
+            .card h3 {{ margin-top: 0; color: #667eea; }}
+            .info-grid {{ display: grid; grid-template-columns: auto 1fr; gap: 10px; }}
+            .info-label {{ font-weight: bold; color: #666; }}
+            .file-list {{ max-height: 300px; overflow-y: auto; }}
+            .file-item {{ 
+                background: white; 
+                margin: 5px 0; 
+                padding: 8px 12px; 
+                border-radius: 4px; 
+                border-left: 3px solid #28a745;
+                font-family: monospace;
+                font-size: 0.9em;
+            }}
+            .commit-item {{ 
+                background: white; 
+                margin: 8px 0; 
+                padding: 12px; 
+                border-radius: 4px; 
+                border-left: 3px solid #ffc107;
+            }}
+            .commit-title {{ font-weight: bold; color: #333; }}
+            .commit-date {{ color: #666; font-size: 0.9em; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🤗 Hugging Face Repository Viewer</h1>
+                <p>Repository: {repo_id}</p>
+            </div>
+            
+            <div class="nav">
+                <a href="/">🏠 Home</a>
+                <a href="/api/users">👥 Users</a>
+                <a href="/debug/dashboard">🔧 Debug</a>
+                <a href="/huggingface">🤗 HF Repository</a>
+            </div>
+            
+            <div class="content">
+                <div class="grid">
+                    <div class="card">
+                        <h3>📋 Repository Info</h3>
+                        <div class="info-grid">
+                            <div class="info-label">Author:</div>
+                            <div>{repo_info.get('author', 'N/A')}</div>
+                            <div class="info-label">Created:</div>
+                            <div>{repo_info.get('created_at', 'N/A')[:10] if repo_info.get('created_at') != 'N/A' else 'N/A'}</div>
+                            <div class="info-label">Modified:</div>
+                            <div>{repo_info.get('last_modified', 'N/A')[:10] if repo_info.get('last_modified') != 'N/A' else 'N/A'}</div>
+                            <div class="info-label">Downloads:</div>
+                            <div>{repo_info.get('downloads', 0)}</div>
+                            <div class="info-label">Likes:</div>
+                            <div>{repo_info.get('likes', 0)}</div>
+                            <div class="info-label">Files:</div>
+                            <div>{len(files)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>📁 Files ({len(files)})</h3>
+                        <div class="file-list">
+                            {''.join([f'<div class="file-item">📄 {file}</div>' for file in files[:20]])}
+                            {f'<div style="text-align: center; margin-top: 10px; color: #666;">... and {len(files) - 20} more files</div>' if len(files) > 20 else ''}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="margin-top: 30px;">
+                    <h3>📜 Recent Commits</h3>
+                    {''.join([f'''
+                    <div class="commit-item">
+                        <div class="commit-title">{commit['title']}</div>
+                        <div class="commit-date">{commit['date'][:10] if commit['date'] != 'N/A' else 'N/A'} by {commit['author']}</div>
+                    </div>
+                    ''' for commit in commits[:5]])}
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+@app.get("/huggingface/file/{file_path:path}")
+async def view_hf_file(file_path: str):
+    """Hugging Face リポジトリの特定ファイル内容を表示"""
+    if not HF_CLIENT_AVAILABLE:
+        return {"error": "Hugging Face Client not available"}
+    
+    client = HuggingFaceRepoClient()
+    repo_id = "kenken999/fastapi_django_main_live"
+    
+    content = client.read_file_content(repo_id, file_path, "space")
+    
+    return {
+        "repo_id": repo_id,
+        "file_path": file_path,
+        "content": content,
+        "timestamp": datetime.now().isoformat()
+    }
 
 if __name__ == "__main__":
     import uvicorn
