@@ -13,8 +13,8 @@ from mysite.libs.utilities import validate_signature, no_process_file
 from controllers.gra_04_database.rides import test_set_lide
 from mysite.interpreter.prompt import prompt_genalate,test_prompt
 from mysite.interpreter.google_chat import send_google_chat_card,send_google_chat_card_thread
-from mysite.interpreter.interpreter import chat_with_interpreter
-from controllers.gra_02_openInterpreter.OpenInterpreter import chat_with_interpreter_no_stream
+#from mysite.interpreter.interpreter import chat_with_interpreter
+#from routers.gra_02_openInterpreter.OpenInterpreter import chat_with_interpreter_no_stream
 from mysite.appsheet.appsheet import get_senario
 import asyncio
 logger = logging.getLogger(__name__)

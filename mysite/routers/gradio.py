@@ -1,13 +1,13 @@
 import shutil
 import gradio as gr
-from mysite.libs.utilities import chat_with_interpreter, completion, process_file
-from interpreter import interpreter
-import mysite.interpreter.interpreter_config  # インポートするだけで設定が適用されます
+#from mysite.libs.utilities import chat_with_interpreter, completion, process_file
+#from interpreter import interpreter
+#import mysite.interpreter.interpreter_config  # インポートするだけで設定が適用されます
 import importlib
 import os
 import pkgutil
 #from babyagi.babyagi import gradio_babyagi
-from controllers.gra_02_openInterpreter.OpenInterpreter import gradio_interface
+#from routers.gra_02_openInterpreter.OpenInterpreter import gradio_interface
 #from llamafactory.webui.interface import create_ui
 import importlib
 import os

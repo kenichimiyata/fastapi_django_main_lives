@@ -5,18 +5,99 @@ import hashlib
 import base64
 import subprocess
 import time
-from mysite.logger import logger
 import async_timeout
 import asyncio
-import mysite.interpreter.interpreter_config 
-from models.ride import test_set_lide
-from mysite.libs.github import github
 import requests
 import json
-from mysite.logger import log_error
-import os
+
+# Conditional imports to avoid circular dependencies
+try:
+    from mysite.logger import logger, log_error
+except ImportError:
+    # Fallback logger for standalone usage
+    import logging
+    logger = logging.getLogger(__name__)
+    log_error = logger.error
+
+try:
+    import mysite.interpreter.interpreter_config
+except ImportError:
+    pass
+
+try:
+    from models.ride import test_set_lide
+except ImportError:
+    def test_set_lide(prompt, url):
+        logger.warning("test_set_lide not available")
+        pass
+
+try:
+    from mysite.libs.github import github
+except ImportError:
+    def github(token, foldername):
+        logger.warning("github function not available")
+        return "https://github.com/placeholder"
+
 GENERATION_TIMEOUT_SEC=60
-BASE_PATH = "/home/user/app/app/Http/controller/"
+
+def get_base_path():
+    """
+    環境に応じて動的にベースパスを取得
+    """
+    try:
+        # 環境変数から取得を試行
+        env_base_path = os.getenv("INTERPRETER_BASE_PATH")
+        if env_base_path:
+            # パスの正規化と存在確認
+            normalized_path = os.path.normpath(env_base_path)
+            if not normalized_path.endswith('/'):
+                normalized_path += '/'
+            
+            # 親ディレクトリの存在確認
+            parent_dir = os.path.dirname(normalized_path.rstrip('/'))
+            if os.path.exists(parent_dir):
+                return normalized_path
+            
+            logger.warning(f"Environment path parent not found: {parent_dir}")
+        
+        # 現在の作業ディレクトリから推測
+        current_dir = os.getcwd()
+        logger.info(f"Current directory: {current_dir}")
+        
+        # Codespaces環境の検出
+        if "/workspaces/" in current_dir:
+            path = os.path.join(current_dir, "app", "Http", "controller")
+            return os.path.normpath(path) + "/"
+        
+        # Docker環境の検出
+        if "/home/user/app/" in current_dir or os.path.exists("/home/user/app/"):
+            return "/home/user/app/app/Http/controller/"
+        
+        # ローカル開発環境
+        if "fastapi_django_main_live" in current_dir:
+            path = os.path.join(current_dir, "app", "Http", "controller")
+            return os.path.normpath(path) + "/"
+        
+        # フォールバック: カレントディレクトリ下にcontrollerディレクトリを作成
+        fallback_path = os.path.join(current_dir, "temp_controller")
+        return os.path.normpath(fallback_path) + "/"
+        
+    except Exception as e:
+        logger.error(f"Error in get_base_path: {str(e)}")
+        # 絶対フォールバック
+        return os.path.join(os.getcwd(), "temp_controller") + "/"
+
+# 動的にベースパスを設定 - 遅延初期化
+BASE_PATH = None
+
+def get_base_path_safe():
+    """
+    安全なベースパス取得（遅延初期化）
+    """
+    global BASE_PATH
+    if BASE_PATH is None:
+        BASE_PATH = get_base_path()
+    return BASE_PATH
 
 def set_environment_variables():
     os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1"
@@ -210,14 +291,56 @@ def validate_signature(body: str, signature: str, secret: str) -> bool:
     ).digest()
     expected_signature = base64.b64encode(hash).decode("utf-8")
     return hmac.compare_digest(expected_signature, signature)
-from mysite.interpreter.google_chat import send_google_chat_card,send_google_chat_card_thread
+
+# Conditional import for google_chat functions
+try:
+    from mysite.interpreter.google_chat import send_google_chat_card, send_google_chat_card_thread
+except ImportError:
+    def send_google_chat_card(*args, **kwargs):
+        logger.warning("send_google_chat_card not available")
+        pass
+    def send_google_chat_card_thread(*args, **kwargs):
+        logger.warning("send_google_chat_card_thread not available")
+        pass
+
 #プロセスの実行
+def ensure_base_path_exists():
+    """
+    ベースパスが存在することを確認し、必要に応じて作成
+    """
+    global BASE_PATH
+    # 遅延初期化
+    if BASE_PATH is None:
+        BASE_PATH = get_base_path()
+    
+    try:
+        os.makedirs(BASE_PATH, exist_ok=True)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to create base path {BASE_PATH}: {str(e)}")
+        # フォールバックパスを試行
+        fallback_path = os.path.join(os.getcwd(), "temp_controller/")
+        try:
+            os.makedirs(fallback_path, exist_ok=True)
+            BASE_PATH = fallback_path
+            logger.info(f"Using fallback path: {BASE_PATH}")
+            return True
+        except Exception as fallback_error:
+            logger.error(f"Failed to create fallback path: {str(fallback_error)}")
+            return False
+
 def no_process_file(prompt, foldername,thread_name=None):
     set_environment_variables()
+    
+    # ベースパスの存在確認
+    if not ensure_base_path_exists():
+        return "Error: Could not create or access base directory"
+    
+    target_dir = f"{BASE_PATH}{foldername}"
     try:
-        proc = subprocess.Popen(["mkdir", f"{BASE_PATH}{foldername}"])
-    except subprocess.CalledProcessError as e:
-        return f"Processed Content:\n{e.stdout}\n\nMake Command Error:\n{e.stderr}"
+        os.makedirs(target_dir, exist_ok=True)
+    except Exception as e:
+        return f"Error creating directory {target_dir}: {str(e)}"
 
     no_extension_path = f"{BASE_PATH}{foldername}/prompt"
     time.sleep(1)
@@ -269,10 +392,16 @@ def no_process_file(prompt, foldername,thread_name=None):
 
 def process_nofile(prompt, foldername, token=None):
     set_environment_variables()
+    
+    # ベースパスの存在確認
+    if not ensure_base_path_exists():
+        return "Error: Could not create or access base directory"
+    
+    target_dir = f"{BASE_PATH}{foldername}"
     try:
-        os.makedirs(f"{BASE_PATH}{foldername}", exist_ok=True)
+        os.makedirs(target_dir, exist_ok=True)
     except Exception as e:
-        return f"Error creating directory: {str(e)}"
+        return f"Error creating directory {target_dir}: {str(e)}"
 
     time.sleep(1)
 
@@ -315,10 +444,16 @@ def process_nofile(prompt, foldername, token=None):
 
 def process_file(fileobj, prompt, foldername,token=None):
     set_environment_variables()
+    
+    # ベースパスの存在確認
+    if not ensure_base_path_exists():
+        return "Error: Could not create or access base directory"
+    
+    target_dir = f"{BASE_PATH}{foldername}"
     try:
-        proc = subprocess.Popen(["mkdir", f"{BASE_PATH}{foldername}"])
-    except subprocess.CalledProcessError as e:
-        return f"Processed Content:\n{e.stdout}\n\nMake Command Error:\n{e.stderr}"
+        os.makedirs(target_dir, exist_ok=True)
+    except Exception as e:
+        return f"Error creating directory {target_dir}: {str(e)}"
     time.sleep(2)
     path = f"{BASE_PATH}{foldername}/" + os.path.basename(fileobj)
     shutil.copyfile(fileobj.name, path)

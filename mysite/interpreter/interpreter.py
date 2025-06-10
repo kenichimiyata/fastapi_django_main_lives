@@ -14,7 +14,7 @@ from groq import Groq
 
 # Try to import open-interpreter, but handle if it's not available
 try:
-    import interpreter
+    from interpreter import interpreter
 except ImportError:
     print("Warning: open-interpreter not available. Some features may not work.")
     interpreter = None
@@ -22,6 +22,10 @@ except ImportError:
 GENERATION_TIMEOUT_SEC=60
 
 def set_environment_variables():
+    # Load environment variables first
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     # Try both possible environment variable names for Groq API key
     groq_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
     if groq_key:
@@ -67,6 +71,10 @@ def chat_with_interpreter(
         yield "Error: open-interpreter is not available. Please install it with: pip install open-interpreter"
         return
         
+    # Load environment variables if not already loaded
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     # Set the API key for the interpreter
     api_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
     if not api_key:
@@ -120,6 +128,10 @@ def chat_with_interpreter(
 GENERATION_TIMEOUT_SEC = 60
 
 def completion(message: str, history, c=None, d=None, prompt="あなたは日本語の優秀なアシスタントです。"):
+    # Load environment variables if not already loaded
+    from dotenv import load_dotenv
+    load_dotenv()
+    
     # Try both possible environment variable names for Groq API key
     api_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
     if not api_key:

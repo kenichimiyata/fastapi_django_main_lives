@@ -1,0 +1,13 @@
+Testing environment variable loading...
+load_dotenv() result: True
+GROQ_API_KEY found: True
+api_key found: True
+GROQ_API_KEY starts with: gsk_JVhaGp...
+api_key starts with: gsk_JVhaGp...
+Warning: Could not configure interpreter: module 'interpreter' has no attribute 'llm'
+Successfully imported interpreter module
+Warning: Could not configure interpreter: module 'interpreter' has no attribute 'llm'
+Environment variables set successfully
+Final GROQ_API_KEY: True
+Final api_key: True
+Final OPENAI_API_KEY: True

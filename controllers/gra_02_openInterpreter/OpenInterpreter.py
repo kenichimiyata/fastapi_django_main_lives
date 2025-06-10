@@ -4,7 +4,6 @@ import mysite.interpreter.interpreter_config  # インポートするだけで�
 import duckdb
 import os
 import sqlite3
-import ast  # 追加：コード検証用
 from datetime import datetime
 import base64
 from PIL import Image
@@ -185,6 +184,7 @@ def format_responses(chunk, full_response):
 def chat_with_interpreter(message, history=None,passw=None, temperature=None, max_new_tokens=None):
     import os
     
+    # 🎯 ここにブレークポイントを設定してください！ (デバッグ開始点)
     print(f"DEBUG: Received message: '{message}'")
     print(f"DEBUG: Password: '{passw}'")
     
@@ -194,6 +194,10 @@ def chat_with_interpreter(message, history=None,passw=None, temperature=None, ma
         print(f"DEBUG: {error_msg}")
         yield error_msg
         return
+    
+    # Load environment variables if not already loaded
+    from dotenv import load_dotenv
+    load_dotenv()
     
     # API key configuration
     api_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
@@ -216,32 +220,16 @@ def chat_with_interpreter(message, history=None,passw=None, temperature=None, ma
         interpreter.force_task_completion = False  # Don't force completion
         interpreter.safe_mode = "ask"  # Ask before running code
         
-        # Set Django and database context
-        interpreter.system_message = """
-You are a helpful AI assistant that works with Django and database operations.
-
-IMPORTANT CONTEXT:
-- This is a Django+FastAPI hybrid application
-- Database connection: postgresql://miyataken999:yz1wPf4KrWTm@ep-odd-mode-93794521.us-east-2.aws.neon.tech/neondb?sslmode=require
-- You can help with Django models, database queries, Python code, and web development
-- Always provide clear explanations with your code
-- Focus on answering the user's specific question
-
-Available tools and databases:
-- PostgreSQL database (main database)
-- SQLite database (for chat history)
-- Django ORM
-- Python libraries for database operations
-"""
-        
-        print("DEBUG: Interpreter configured successfully with Django context")
+        print("DEBUG: Interpreter configured successfully")
     except Exception as e:
         error_msg = f"Error configuring interpreter: {e}"
         print(f"DEBUG: {error_msg}")
         yield error_msg
         return
 
-    if passw != "12345":
+    # Password check - get from environment variable
+    required_password = os.getenv("OPENINTERPRETER_PASSWORD", "12345")  # fallback to 12345
+    if passw != required_password:
         error_msg = "パスワードが正しくありません。正しいパスワードを入力してください。"
         print(f"DEBUG: {error_msg}")
         yield error_msg
@@ -278,7 +266,7 @@ Available tools and databases:
         
         print(f"DEBUG: Starting interpreter.chat() with message: '{message}'")
         
-        # Process the current message - pass the message directly
+        # Process the current message
         chunk_count = 0
         for chunk in interpreter.chat(message, display=False, stream=True):
             chunk_count += 1
@@ -346,12 +334,13 @@ def chat_with_interpreter_no_stream(message, history=None, a=None, b=None, c=Non
         if isinstance(chunk, dict):
             full_response = format_response(chunk, full_response)
         else:
-            full_response += str(chunk)
-            
+            raise TypeError("Expected chunk to be a dictionary")
+        #yield full_response
     assistant_entry = {"role": "assistant", "type": "message", "content": str(full_response)}
     interpreter.messages.append(assistant_entry)
     add_message_to_db("assistant", "message", str(full_response))
 
+    #yield full_response
     return str(full_response), history
 
 

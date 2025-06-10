@@ -43,16 +43,17 @@ def display_html():
     """
     return html_content
 
-# Gradioのインターフェースを作成
-gradio_interfaces = gr.Interface(
-    fn=display_html,  # HTMLコンテンツを返す関数
-    inputs=[],  # 入力なし
-    outputs=gr.Markdown()  # HTMLコンテンツを表示
-)
+# Gradioのインターフェースを作成  
+# Note: このInterfaceは使用せず、下のBlocksベースのgradio_interfaceを使用
+# gradio_interfaces = gr.Interface(
+#     fn=display_html,  # HTMLコンテンツを返す関数
+#     inputs=[],  # 入力なし
+#     outputs=gr.Markdown()  # HTMLコンテンツを表示
+# )
 
 
 # Gradioのインターフェースを作成
 with gr.Blocks() as gradio_interface:
-    gr.Html(display_html())
+    gr.HTML(display_html())
 # インターフェースを起動
 #iface.launch()

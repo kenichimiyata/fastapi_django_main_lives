@@ -1,0 +1,4 @@
+Successfully imported interpreter from interpreter
+Interpreter type: <class 'interpreter.core.core.OpenInterpreter'>
+Has llm attribute: True
+LLM type: <class 'interpreter.core.llm.llm.Llm'>

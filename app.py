@@ -38,5 +38,41 @@ import os
 from llamafactory.webui.interface import create_ui
 
 if __name__ == "__main__":
-    uvicorn.run("mysite.asgi:app", host="0.0.0.0", port=7860)
-# uvicorn.run("mysite.asgi:app", host="0.0.0.0", port=7860, reload=True)
+    import sys
+    
+    # デバッグモードかどうかを判定
+    is_debug = "--debug" in sys.argv or any("debugpy" in arg for arg in sys.argv)
+    
+    try:
+        print("🚀 アプリケーションを開始しています...")
+        
+        if is_debug:
+            print("🐛 デバッグモード: リロードを無効化してブレークポイントを有効にします")
+            # デバッグモード: reloadを無効にしてブレークポイントを使用可能に
+            uvicorn.run(
+                "mysite.asgi:app", 
+                host="0.0.0.0", 
+                port=7860, 
+                reload=False,  # デバッグ時はリロード無効
+                log_level="debug",
+                access_log=True,
+                use_colors=True
+            )
+        else:
+            print("📍 開発モード: ホットリロードが有効です")
+            # 開発モード: reloadを有効にして高速開発
+            uvicorn.run(
+                "mysite.asgi:app", 
+                host="0.0.0.0", 
+                port=7860, 
+                reload=True,  # 開発時はリロード有効
+                log_level="debug",
+                access_log=True,
+                use_colors=True,
+                reload_dirs=["/workspaces/fastapi_django_main_live"]
+            )
+            
+    except Exception as e:
+        print(f"❌ アプリケーション起動エラー: {e}")
+        import traceback
+        traceback.print_exc()
