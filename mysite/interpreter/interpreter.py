@@ -12,21 +12,79 @@ import mysite.interpreter.interpreter_config
 from fastapi import HTTPException
 from groq import Groq
 
+# Try to import open-interpreter, but handle if it's not available
+try:
+    import interpreter
+except ImportError:
+    print("Warning: open-interpreter not available. Some features may not work.")
+    interpreter = None
 
 GENERATION_TIMEOUT_SEC=60
 
 def set_environment_variables():
-    os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1"
-    os.environ["OPENAI_API_KEY"] = os.getenv("api_key")
-    os.environ["MODEL_NAME"] = "llama3-8b-8192"
-    os.environ["LOCAL_MODEL"] = "true"
+    # Try both possible environment variable names for Groq API key
+    groq_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
+    if groq_key:
+        os.environ["OPENAI_API_KEY"] = groq_key
+        os.environ["GROQ_API_KEY"] = groq_key
+        os.environ["api_key"] = groq_key
+        # Also set for open-interpreter compatibility
+        os.environ["OPENAI_API_BASE"] = "https://api.groq.com/openai/v1"
+        os.environ["MODEL_NAME"] = "llama3-8b-8192"
+        os.environ["LOCAL_MODEL"] = "true"
+        
+        # Configure interpreter if it's available
+        if interpreter is not None:
+            try:
+                interpreter.llm.api_key = groq_key
+                interpreter.llm.api_base = "https://api.groq.com/openai/v1"
+                interpreter.llm.model = "llama3-8b-8192"
+            except Exception as e:
+                print(f"Warning: Could not configure interpreter: {e}")
+
+# Set environment variables on import
+set_environment_variables()
+
+def format_response(chunk, full_response):
+    """Format the response chunk and add it to the full response"""
+    if isinstance(chunk, dict):
+        if 'content' in chunk:
+            content = chunk['content']
+            if isinstance(content, str):
+                return full_response + content
+    elif hasattr(chunk, 'content'):
+        return full_response + str(chunk.content)
+    elif isinstance(chunk, str):
+        return full_response + chunk
+    return full_response
 
 # Set the environment variable.
 def chat_with_interpreter(
     message, history=None, a=None, b=None, c=None, d=None
 ):  # , openai_api_key):
+    # Check if interpreter is available
+    if interpreter is None:
+        yield "Error: open-interpreter is not available. Please install it with: pip install open-interpreter"
+        return
+        
     # Set the API key for the interpreter
-    # interpreter.llm.api_key = openai_api_key
+    api_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
+    if not api_key:
+        yield "Error: No Groq API key found. Please set GROQ_API_KEY or api_key environment variable."
+        return
+        
+    # Configure the interpreter with Groq settings
+    try:
+        interpreter.llm.api_key = api_key
+        interpreter.llm.api_base = "https://api.groq.com/openai/v1"
+        interpreter.llm.model = "llama3-8b-8192"
+        # Also ensure environment variables are set
+        os.environ["OPENAI_API_KEY"] = api_key
+        os.environ["GROQ_API_KEY"] = api_key
+    except Exception as e:
+        yield f"Error configuring interpreter: {e}"
+        return
+    
     if message == "reset":
         interpreter.reset()
         return "Interpreter reset", history
@@ -56,13 +114,19 @@ def chat_with_interpreter(
         full_response = format_response(chunk, full_response)
         yield full_response  # chunk.get("content", "")
 
-    yield full_response + rows  # , history
+    yield full_response  # , history
     return full_response, history
 
 GENERATION_TIMEOUT_SEC = 60
 
 def completion(message: str, history, c=None, d=None, prompt="あなたは日本語の優秀なアシスタントです。"):
-    client = Groq(api_key=os.getenv("api_key"))
+    # Try both possible environment variable names for Groq API key
+    api_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
+    if not api_key:
+        yield "Error: No Groq API key found. Please set GROQ_API_KEY or api_key environment variable."
+        return
+        
+    client = Groq(api_key=api_key)
     messages = []
     recent_messages = history[-20:]
     for conversation in recent_messages:

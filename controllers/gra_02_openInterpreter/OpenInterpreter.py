@@ -1,66 +1,126 @@
 import gradio as gr
-from mysite.libs.utilities import chat_with_interpreter, completion, process_file,no_process_file
-from interpreter import interpreter
+from mysite.libs.utilities import completion, process_file, no_process_file
 import mysite.interpreter.interpreter_config  # インポートするだけで設定が適用されます
 import duckdb
+import os
+import sqlite3
+import ast  # 追加：コード検証用
+from datetime import datetime
+import base64
+from PIL import Image
+from io import BytesIO
+
+# Try to import open-interpreter, but handle if it's not available
+try:
+    from interpreter import interpreter
+except ImportError:
+    print("Warning: open-interpreter not available. Some features may not work.")
+    interpreter = None
+    
 #from logger import logger
 
+def validate_code(code_content):
+    """Validate Python code syntax to prevent syntax errors"""
+    if not code_content or not code_content.strip():
+        return False
+    
+    # Skip if only whitespace or empty lines
+    cleaned_code = '\n'.join(line for line in code_content.split('\n') if line.strip())
+    if not cleaned_code:
+        return False
+    
+    try:
+        import ast
+        # Try to parse the code to check for syntax errors
+        ast.parse(cleaned_code)
+        return True
+    except SyntaxError as e:
+        print(f"DEBUG: Syntax error in code: {e}")
+        return False
+    except Exception as e:
+        print(f"DEBUG: Error validating code: {e}")
+        return False
+
 def format_response(chunk, full_response):
+    print(f"DEBUG: Processing chunk type: {chunk.get('type', 'unknown')}")
+    
     # Message
     if chunk["type"] == "message":
-        full_response += chunk.get("content", "")
+        content = chunk.get("content", "")
+        if content:  # Only add non-empty content
+            full_response += content
         if chunk.get("end", False):
             full_response += "\n"
 
-    # Code
+    # Code - Only add code blocks if they contain valid code
     if chunk["type"] == "code":
+        code_content = chunk.get("content", "").strip()
+        print(f"DEBUG: Code chunk content: '{code_content}'")
+        
         if chunk.get("start", False):
-            full_response += "```python\n"
-        #full_response += chunk.get("content", "").replace("`", "")
+            # Don't add the opening ``` yet, wait to see if we have valid content
+            pass
+        
+        # Only add valid, non-empty code content
+        if code_content and not code_content.isspace():
+            # Remove backticks and clean up the code
+            code_content = code_content.replace("`", "").strip()
+            
+            # Validate code syntax
+            if validate_code(code_content):
+                # Add opening ``` if this is the first valid content in a code block
+                if "```python\n" not in full_response[-20:]:
+                    full_response += "```python\n"
+                full_response += code_content
+                if not code_content.endswith('\n'):
+                    full_response += '\n'
+            else:
+                print(f"DEBUG: Invalid code syntax detected, skipping: {code_content}")
+                # Don't add anything for invalid code
+        
         if chunk.get("end", False):
-            full_response += "\n```\n"
+            # Only add closing ``` if we have an opening ```
+            if "```python\n" in full_response and not full_response.endswith("```\n"):
+                full_response += "```\n"
 
-    # Output
-    if chunk["type"] == "confirmation":
-        if chunk.get("start", False):
-            full_response += "```python\n"
-        #full_response += chunk.get("content", {}).get("code", "")
-        if chunk.get("end", False):
-            full_response += "```\n"
-
-    # Console
+    # Console output
     if chunk["type"] == "console":
         console_content = chunk.get("content", "")
-        
-        # デバッグログ: console_content の内容と型を出力
-        print(f"Processing console content: {console_content}, type={type(console_content)}")
+        print(f"DEBUG: Console chunk content: '{console_content}'")
         
         if not isinstance(console_content, str):
             console_content = str(console_content)
-            print(f"Converted console_content to string: {console_content}")
         
-        # 不要な内容のフィルタリング
-        if console_content.isdigit() or console_content.strip().lower() == "none":
-            print(f"Skipping unwanted console content: {console_content}")
-            return full_response
-        
-        # バッククオートを削除
-        console_content = console_content.replace("`", "")
-        
-        # 言語タグなしでコードブロックを開始
-        if chunk.get("start", False):
-            full_response += "```python\n"
-        
-        if chunk.get("format", "") == "active_line":
-            if not console_content.strip():
-                full_response += "No output available on console.\n"
-            else:
+        # Filter out unwanted content
+        if console_content.strip() and not console_content.isdigit() and console_content.strip().lower() != "none":
+            # Remove backticks
+            console_content = console_content.replace("`", "")
+            
+            if chunk.get("start", False):
+                full_response += "```\n"
+            
+            if chunk.get("format", "") == "active_line":
                 full_response += console_content.rstrip("\n") + "\n"
-        elif chunk.get("format", "") == "output":
-            full_response += console_content.rstrip("\n") + "\n"
-        
-        if chunk.get("end", False):
-            full_response += "```\n"
+            elif chunk.get("format", "") == "output":
+                full_response += console_content.rstrip("\n") + "\n"
+            
+            if chunk.get("end", False):
+                full_response += "```\n"
+
+    # Output/Confirmation - handle carefully
+    if chunk["type"] == "confirmation":
+        code_content = chunk.get("content", {})
+        if isinstance(code_content, dict):
+            code = code_content.get("code", "").strip()
+            if code and validate_code(code):
+                if chunk.get("start", False):
+                    full_response += "```python\n"
+                full_response += code
+                if not code.endswith('\n'):
+                    full_response += '\n'
+                if chunk.get("end", False):
+                    full_response += "```\n"
+
     # Image
     if chunk["type"] == "image":
         if chunk.get("start", False) or chunk.get("end", False):
@@ -70,23 +130,25 @@ def format_response(chunk, full_response):
             if image_format == "base64.png":
                 image_content = chunk.get("content", "")
                 if image_content:
-                    image = Image.open(BytesIO(base64.b64decode(image_content)))
-                    new_image = Image.new("RGB", image.size, "white")
-                    new_image.paste(image, mask=image.split()[3])
-                    buffered = BytesIO()
-                    new_image.save(buffered, format="PNG")
-                    img_str = base64.b64encode(buffered.getvalue()).decode()
-                    full_response += f"![Image](data:image/png;base64,{img_str})\n"
+                    try:
+                        image = Image.open(BytesIO(base64.b64decode(image_content)))
+                        new_image = Image.new("RGB", image.size, "white")
+                        new_image.paste(image, mask=image.split()[3])
+                        buffered = BytesIO()
+                        new_image.save(buffered, format="PNG")
+                        img_str = base64.b64encode(buffered.getvalue()).decode()
+                        full_response += f"![Image](data:image/png;base64,{img_str})\n"
+                    except Exception as e:
+                        print(f"DEBUG: Error processing image: {e}")
 
     return full_response
 
-import sqlite3
-from datetime import datetime
-
 # SQLiteの設定
-db_name = "chat_history.db"
+db_name = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "chat_history.db")
 
 def initialize_db():
+    # Create database directory if it doesn't exist
+    os.makedirs(os.path.dirname(db_name), exist_ok=True)
     conn = sqlite3.connect(db_name)
     cursor = conn.cursor()
     cursor.execute("""
@@ -121,40 +183,146 @@ def format_responses(chunk, full_response):
     return full_response + chunk.get("content", "")
 
 def chat_with_interpreter(message, history=None,passw=None, temperature=None, max_new_tokens=None):
+    import os
+    
+    print(f"DEBUG: Received message: '{message}'")
+    print(f"DEBUG: Password: '{passw}'")
+    
+    # Check if interpreter is available
+    if interpreter is None:
+        error_msg = "Error: open-interpreter is not available. Please install it with: pip install open-interpreter"
+        print(f"DEBUG: {error_msg}")
+        yield error_msg
+        return
+    
+    # API key configuration
+    api_key = os.getenv("GROQ_API_KEY") or os.getenv("api_key")
+    if not api_key:
+        error_msg = "Error: No Groq API key found. Please set GROQ_API_KEY or api_key environment variable."
+        print(f"DEBUG: {error_msg}")
+        yield error_msg
+        return
+
+    print(f"DEBUG: API key found: {api_key[:10]}...")
+
+    # Configure interpreter with API key
+    try:
+        interpreter.llm.api_key = api_key
+        interpreter.llm.api_base = "https://api.groq.com/openai/v1"
+        interpreter.llm.model = "llama3-8b-8192"
+        
+        # Configure interpreter settings to reduce empty code blocks
+        interpreter.auto_run = False  # Don't auto-run code
+        interpreter.force_task_completion = False  # Don't force completion
+        interpreter.safe_mode = "ask"  # Ask before running code
+        
+        # Set Django and database context
+        interpreter.system_message = """
+You are a helpful AI assistant that works with Django and database operations.
+
+IMPORTANT CONTEXT:
+- This is a Django+FastAPI hybrid application
+- Database connection: postgresql://miyataken999:yz1wPf4KrWTm@ep-odd-mode-93794521.us-east-2.aws.neon.tech/neondb?sslmode=require
+- You can help with Django models, database queries, Python code, and web development
+- Always provide clear explanations with your code
+- Focus on answering the user's specific question
+
+Available tools and databases:
+- PostgreSQL database (main database)
+- SQLite database (for chat history)
+- Django ORM
+- Python libraries for database operations
+"""
+        
+        print("DEBUG: Interpreter configured successfully with Django context")
+    except Exception as e:
+        error_msg = f"Error configuring interpreter: {e}"
+        print(f"DEBUG: {error_msg}")
+        yield error_msg
+        return
 
     if passw != "12345":
-        yield "full_response"
-        return "full_response", history
+        error_msg = "パスワードが正しくありません。正しいパスワードを入力してください。"
+        print(f"DEBUG: {error_msg}")
+        yield error_msg
+        return
+
+    print("DEBUG: Password check passed")
 
     if message == "reset":
         interpreter.reset()
-        return "Interpreter reset", history
+        yield "Interpreter reset"
+        return
+
+    print(f"DEBUG: Processing message: '{message}'")
 
     full_response = ""
     recent_messages = get_recent_messages(limit=4)
 
-    for role, message_type, content in recent_messages:
-        entry = {"role": role, "type": message_type, "content": content}
-        interpreter.messages.append(entry)
-
-    user_entry = {"role": "user", "type": "message", "content": message}
-    interpreter.messages.append(user_entry)
+    # Add current user message to database
     add_message_to_db("user", "message", message)
 
-    for chunk in interpreter.chat(message, display=False, stream=True):
-        if isinstance(chunk, dict):
-            full_response = format_response(chunk, full_response)
-        else:
-            raise TypeError("Expected chunk to be a dictionary")
-        print(full_response)  
-        yield full_response
+    # Process the chat
+    try:
+        # Configure interpreter messages
+        interpreter.messages = []
+        
+        print(f"DEBUG: Adding {len(recent_messages)} recent messages to history")
+        
+        # Add recent history to interpreter
+        for role, message_type, content in recent_messages:
+            if role == "user":
+                interpreter.messages.append({"role": "user", "type": "message", "content": content})
+            elif role == "assistant":
+                interpreter.messages.append({"role": "assistant", "type": "message", "content": content})
+        
+        print(f"DEBUG: Starting interpreter.chat() with message: '{message}'")
+        
+        # Process the current message - pass the message directly
+        chunk_count = 0
+        for chunk in interpreter.chat(message, display=False, stream=True):
+            chunk_count += 1
+            print(f"DEBUG: Processing chunk {chunk_count}: {type(chunk)} - {chunk}")
+            
+            if isinstance(chunk, dict):
+                old_response = full_response
+                full_response = format_response(chunk, full_response)
+                
+                # Only yield if content was actually added
+                if full_response != old_response:
+                    print(f"DEBUG: Response updated from '{old_response[-50:]}' to '{full_response[-50:]}'")
+                    yield full_response
+            else:
+                # Handle non-dict chunks
+                print(f"DEBUG: Non-dict chunk: {chunk}")
+                if hasattr(chunk, 'content'):
+                    content = str(chunk.content)
+                    if content.strip():  # Only add non-empty content
+                        full_response += content
+                        yield full_response
+                else:
+                    content = str(chunk)
+                    if content.strip():  # Only add non-empty content
+                        full_response += content
+                        yield full_response
 
-    assistant_entry = {"role": "assistant", "type": "message", "content": full_response}
-    interpreter.messages.append(assistant_entry)
-    add_message_to_db("assistant", "message", full_response)
+        print(f"DEBUG: Chat processing completed. Total chunks: {chunk_count}")
+        print(f"DEBUG: Final response length: {len(full_response)}")
+
+        # Save the final response
+        if full_response.strip():
+            add_message_to_db("assistant", "message", full_response)
+            print("DEBUG: Response saved to database")
+        else:
+            print("DEBUG: No response to save (empty)")
+
+    except Exception as e:
+        error_msg = f"Error during chat processing: {e}"
+        print(f"DEBUG: Exception occurred: {error_msg}")
+        yield error_msg
+        add_message_to_db("assistant", "error", error_msg)
 
     yield full_response
-    return full_response, history
 
 
 def chat_with_interpreter_no_stream(message, history=None, a=None, b=None, c=None, d=None):
@@ -178,13 +346,12 @@ def chat_with_interpreter_no_stream(message, history=None, a=None, b=None, c=Non
         if isinstance(chunk, dict):
             full_response = format_response(chunk, full_response)
         else:
-            raise TypeError("Expected chunk to be a dictionary")
-        #yield full_response
+            full_response += str(chunk)
+            
     assistant_entry = {"role": "assistant", "type": "message", "content": str(full_response)}
     interpreter.messages.append(assistant_entry)
     add_message_to_db("assistant", "message", str(full_response))
 
-    #yield full_response
     return str(full_response), history
 
 

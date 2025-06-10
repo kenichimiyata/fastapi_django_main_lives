@@ -1,13 +1,13 @@
 import shutil
 import gradio as gr
-#from mysite.libs.utilities import chat_with_interpreter, completion, process_file
-#from interpreter import interpreter
-#import mysite.interpreter.interpreter_config  # インポートするだけで設定が適用されます
+from mysite.libs.utilities import chat_with_interpreter, completion, process_file
+from interpreter import interpreter
+import mysite.interpreter.interpreter_config  # インポートするだけで設定が適用されます
 import importlib
 import os
 import pkgutil
 #from babyagi.babyagi import gradio_babyagi
-#from routers.gra_02_openInterpreter.OpenInterpreter import gradio_interface
+from controllers.gra_02_openInterpreter.OpenInterpreter import gradio_interface
 #from llamafactory.webui.interface import create_ui
 import importlib
 import os
@@ -19,7 +19,7 @@ import pkgutil
 import traceback
 
 def include_gradio_interfaces():
-    package_dir = "/home/user/app/controllers"  # `controllers/` 直下を探索
+    package_dir = "controllers"  # 相対パスでcontrollersディレクトリを指定
     gradio_interfaces = {}  # 辞書型: { interface_name: gradio_interface }
     
     # `controllers/` 以下の全てのサブディレクトリを探索

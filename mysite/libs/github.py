@@ -11,15 +11,16 @@ def github(token, folder):
 
     if not GITHUB_USERNAME or not GITHUB_TOKEN:
         print("❌ github_user または github_token が未設定です")
-        exit(1)
+        #exit(1)
 
     REPO_NAME = "gpt-engeneer"
-    controllers_dir = "/home/user/app/app/Http/controller"
+    # 相対パスを使用してHugging Faceでも動作するようにする
+    controllers_dir = "app/Http/controller"  # app/Http/controllerディレクトリ
     target_dir = os.path.join(controllers_dir, folder)
 
     if not os.path.isdir(target_dir):
         print(f"❌ 指定フォルダが存在しません: {target_dir}")
-        exit(1)
+        return None  # exit(1)の代わりにNoneを返す
 
     def generate_random_string(length=6):
         return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -46,7 +47,7 @@ def github(token, folder):
         print(GITHUB_TOKEN)
         if create.status_code != 201:
             print(f"❌ リポジトリ作成失敗: {create.json()}")
-            exit(1)
+            #exit(1)
         else:
             print(f"✅ リポジトリ作成成功: {REPO_NAME}")
 
@@ -54,7 +55,7 @@ def github(token, folder):
         result = subprocess.run(command, shell=True, text=True, capture_output=True, cwd=cwd)
         if result.returncode != 0:
             print(f"❌ Command failed: {command}\n{result.stderr}")
-            exit(1)
+            #exit(1)
         else:
             print(result.stdout)
 
@@ -84,4 +85,4 @@ def github(token, folder):
 
 
 # 使用例（実行時にtokenを渡す）
-github("your_actual_github_token", "test_folders")
+# github("your_actual_github_token", "test_folders")

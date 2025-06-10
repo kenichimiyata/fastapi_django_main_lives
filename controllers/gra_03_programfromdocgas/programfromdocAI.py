@@ -63,9 +63,5 @@ gradio_interface = gr.Interface(
         gr.Textbox(label="Folder Name", value="test_folders"),
         gr.Textbox(label="github token", value="***********************"),
     ],
-    outputs="text",
-    examples=[
-        ["example1.txt", "Example notes 1", "example_folder_1", "example_token_1"],
-        ["example2.txt", "Example notes 2", "example_folder_2", "example_token_2"]
-    ]
+    outputs="text"
 )

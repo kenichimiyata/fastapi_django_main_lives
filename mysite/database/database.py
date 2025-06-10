@@ -2,6 +2,10 @@ import duckdb
 import pandas as pd
 from fastapi import FastAPI
 import gradio as gr
+import os
+
+# データベースディレクトリを作成
+os.makedirs("./workspace", exist_ok=True)
 
 con = duckdb.connect(database="./workspace/mydatabase.duckdb")
 con.execute("CREATE TABLE IF NOT EXISTS items (id INTEGER, name VARCHAR);")

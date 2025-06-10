@@ -1,6 +1,11 @@
 import gradio as gr
 import os
 import shutil
+from dotenv import load_dotenv
+
+# .envファイルから環境変数を読み込み
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
