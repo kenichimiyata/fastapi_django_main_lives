@@ -153,3 +153,42 @@ cython_debug/
 core.*
 
 *.db
+
+# Security and Secrets
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*service-account*.json
+*credentials*.json
+*secret*.json
+.secrets/
+secrets/
+
+# API Keys and Tokens
+*token*
+*api_key*
+*apikey*
+*access_token*
+*secret_key*
+
+# Environment and Configuration
+.env*
+!.env.example
+config.json
+settings.json
+local_settings.py
+
+# IDE and Editor Files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Temporary and Log Files
+*.tmp
+*.temp
+*.log
+logs/
+temp/
