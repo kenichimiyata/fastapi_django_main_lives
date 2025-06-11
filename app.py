@@ -37,11 +37,24 @@ import os
 
 from llamafactory.webui.interface import create_ui
 
+# Gradio インターフェース作成
+demo = create_ui()
+
 if __name__ == "__main__":
     import sys
     
-    # デバッグモードかどうかを判定
-    is_debug = "--debug" in sys.argv or any("debugpy" in arg for arg in sys.argv)
+    # Hugging Face Spacesでの実行を検出
+    if os.getenv("SPACE_ID") or "--gradio" in sys.argv:
+        print("🤗 Hugging Face Spacesでアプリケーションを起動しています...")
+        demo.launch(
+            server_name="0.0.0.0",
+            server_port=7860,
+            share=True,
+            show_error=True
+        )
+    else:
+        # デバッグモードかどうかを判定
+        is_debug = "--debug" in sys.argv or any("debugpy" in arg for arg in sys.argv)
     
     try:
         print("🚀 アプリケーションを開始しています...")
