@@ -427,10 +427,14 @@ def create_approval_interface():
         
         try:
             result = approval_system.import_issue_to_approval_queue(repo_owner, repo_name, int(issue_number))
-            if result['success']:
-                return f"✅ ISSUE #{issue_number} を承認キューに追加しました (ID: {result['approval_id']})"
+            # Ensure we always return a string for Gradio components
+            if isinstance(result, dict):
+                if result.get('success'):
+                    return f"✅ ISSUE #{issue_number} を承認キューに追加しました (ID: {result.get('approval_id', 'Unknown')})"
+                else:
+                    return f"❌ エラー: {result.get('error', '不明なエラー')}"
             else:
-                return f"❌ エラー: {result['error']}"
+                return str(result)
         except Exception as e:
             return f"❌ エラー: {str(e)}"
     
@@ -470,10 +474,14 @@ def create_approval_interface():
         
         try:
             result = approval_system.approve_request(int(approval_id), reviewer, notes)
-            if result['success']:
-                return f"✅ 承認ID {approval_id} を承認しました"
+            # Ensure we always return a string for Gradio components
+            if isinstance(result, dict):
+                if result.get('success'):
+                    return f"✅ 承認ID {approval_id} を承認しました"
+                else:
+                    return f"❌ エラー: {result.get('error', '不明なエラー')}"
             else:
-                return f"❌ エラー: {result['error']}"
+                return str(result)
         except Exception as e:
             return f"❌ エラー: {str(e)}"
     
@@ -483,10 +491,14 @@ def create_approval_interface():
         
         try:
             result = approval_system.reject_request(int(approval_id), reviewer, reason)
-            if result['success']:
-                return f"✅ 承認ID {approval_id} を拒否しました"
+            # Ensure we always return a string for Gradio components
+            if isinstance(result, dict):
+                if result.get('success'):
+                    return f"✅ 承認ID {approval_id} を拒否しました"
+                else:
+                    return f"❌ エラー: {result.get('error', '不明なエラー')}"
             else:
-                return f"❌ エラー: {result['error']}"
+                return str(result)
         except Exception as e:
             return f"❌ エラー: {str(e)}"
     

@@ -27,8 +27,11 @@ def init_db():
             CREATE TABLE IF NOT EXISTS prompts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
-                url TEXT,
+                github_url TEXT,
+                repository_name TEXT,
+                system_type TEXT DEFAULT 'general',
                 content TEXT NOT NULL,
+                execution_status TEXT DEFAULT 'pending',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -38,15 +41,15 @@ def init_db():
         cursor.execute('SELECT COUNT(*) FROM prompts')
         if cursor.fetchone()[0] == 0:
             default_prompts = [
-                ("社員プロフィールシステム", "", val),
-                ("FastAPI + SQLAlchemy", "", "FastAPIとSQLAlchemyを使用したAPIの作成\n- ユーザー管理\n- 認証機能\n- CRUD操作"),
-                ("Gradio Interface", "", "Gradioインターフェースの作成\n- ファイルアップロード\n- チャット機能\n- データ表示"),
+                ("社員プロフィールシステム", "", "", "web_system", val),
+                ("FastAPI + SQLAlchemy", "", "", "api_system", "FastAPIとSQLAlchemyを使用したAPIの作成\n- ユーザー管理\n- 認証機能\n- CRUD操作"),
+                ("Gradio Interface", "", "", "interface_system", "Gradioインターフェースの作成\n- ファイルアップロード\n- チャット機能\n- データ表示"),
             ]
             
-            for title, url, content in default_prompts:
+            for title, github_url, repo_name, system_type, content in default_prompts:
                 cursor.execute(
-                    'INSERT INTO prompts (title, url, content) VALUES (?, ?, ?)',
-                    (title, url, content)
+                    'INSERT INTO prompts (title, github_url, repository_name, system_type, content) VALUES (?, ?, ?, ?, ?)',
+                    (title, github_url, repo_name, system_type, content)
                 )
         
         conn.commit()
@@ -66,8 +69,8 @@ def save_prompt(title: str, content: str) -> str:
         cursor = conn.cursor()
         
         cursor.execute(
-            'INSERT INTO prompts (title, url, content) VALUES (?, ?, ?)',
-            (title.strip(), "", content.strip())
+            'INSERT INTO prompts (title, github_url, repository_name, system_type, content) VALUES (?, ?, ?, ?, ?)',
+            (title.strip(), "", "", "general", content.strip())
         )
         
         conn.commit()
@@ -292,8 +295,7 @@ with gr.Blocks() as gradio_interface:
                 headers=["ID", "タイトル", "作成日時"],
                 datatype=["number", "str", "str"],
                 value=update_prompt_display(),
-                interactive=False,
-                height=300
+                interactive=False
             )
             
             # 更新ボタン

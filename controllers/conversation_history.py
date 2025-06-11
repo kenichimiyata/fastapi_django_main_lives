@@ -739,12 +739,13 @@ def create_conversation_interface():
     
     return interface
 
-# Gradioインターフェースのインスタンス作成
-gradio_interface = create_conversation_interface()
+# Gradioインターフェースのファクトリー関数（遅延作成）
+gradio_interface = create_conversation_interface
 
 if __name__ == "__main__":
     print("🚀 会話履歴管理システム起動中...")
-    gradio_interface.launch(
+    interface = create_conversation_interface()
+    interface.launch(
         server_port=7872,  # ポート変更
         share=False,
         debug=True

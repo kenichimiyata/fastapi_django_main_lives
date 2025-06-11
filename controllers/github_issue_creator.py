@@ -167,8 +167,8 @@ def create_gradio_interface():
     """Gradioインターフェースを作成"""
     return create_github_issue_interface()
 
-# 自動検出用のgradio_interface
-gradio_interface = create_gradio_interface()
+# 自動検出用のgradio_interface（ファクトリー関数）
+gradio_interface = create_gradio_interface
 interface_title = "🐙 GitHub Issue Creator"
 interface_description = "会話履歴からGitHub Issueを自動作成"
 

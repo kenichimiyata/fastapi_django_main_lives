@@ -11,8 +11,35 @@ import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from github_issue_monitor import GitHubIssueMonitor
-from system_automation import SystemAutomation
+
+# 依存モジュールの安全なインポート
+try:
+    from .github_issue_monitor import GitHubIssueMonitor
+except ImportError:
+    try:
+        from github_issue_monitor import GitHubIssueMonitor
+    except ImportError:
+        # フォールバック: モックclass
+        class GitHubIssueMonitor:
+            def __init__(self, *args, **kwargs):
+                self.monitoring = False
+            def start_monitoring(self):
+                return "⚠️ GitHub監視モジュールが利用できません"
+            def stop_monitoring(self):
+                return "⚠️ GitHub監視モジュールが利用できません"
+            def get_monitoring_status(self):
+                return {'monitoring': False, 'repo': 'N/A', 'check_interval': 0, 'processed_count': 0}
+
+try:
+    from .system_automation import SystemAutomation
+except ImportError:
+    try:
+        from system_automation import SystemAutomation
+    except ImportError:
+        # フォールバック: モックclass
+        class SystemAutomation:
+            def __init__(self, *args, **kwargs):
+                pass
 
 class IntegratedDashboard:
     """統合管理ダッシュボード"""
@@ -365,21 +392,22 @@ class IntegratedDashboard:
         
         return dashboard
 
-def main():
-    """メイン実行"""
-    print("🚀 統合管理ダッシュボード起動中...")
-    
-    dashboard = IntegratedDashboard()
-    interface = dashboard.create_dashboard_interface()
-    
-    print("🌐 ダッシュボードアクセス: http://localhost:7863")
-    print("📊 統合管理画面で全システムを監視できます")
-    
-    interface.launch(
-        share=True,
-        server_name="0.0.0.0",
-        server_port=7863
-    )
+# メインアプリ用のGradioインターフェースオブジェクト
+# Use a factory function to avoid rendering during import
+def create_gradio_interface():
+    dashboard_instance = IntegratedDashboard()
+    return dashboard_instance.create_dashboard_interface()
+
+gradio_interface = create_gradio_interface
+
+# インターフェースタイトル（自動検出用）
+interface_title = "🚀 統合管理ダッシュボード"
 
 if __name__ == "__main__":
-    main()
+    # 直接実行時の処理
+    interface = gradio_interface
+    interface.launch(
+        share=True,
+        server_name="0.0.0.0", 
+        server_port=7863
+    )

@@ -1,7 +1,6 @@
 # interpreter_config.py
 
 import os
-from interpreter import interpreter
 import async_timeout
 import asyncio
 
@@ -9,29 +8,34 @@ import asyncio
 GENERATION_TIMEOUT_SEC = 60
 
 
-# 環境変数でOpenAI APIキーを保存および使用
-interpreter.auto_run = True
-interpreter.llm.model = "huggingface/meta-llama/Meta-Llama-3-8B-Instruct"
-interpreter.llm.api_key = os.getenv("hf_token")
-interpreter.llm.api_base = "https://api.groq.com/openai/v1"
-interpreter.llm.api_key = os.getenv("api_key")
-interpreter.llm.model = "Llama3-70b-8192"
+def configure_interpreter():
+    """Configure interpreter when needed to avoid circular imports"""
+    from interpreter import interpreter
+    
+    # 環境変数でOpenAI APIキーを保存および使用
+    interpreter.auto_run = True
+    interpreter.llm.model = "huggingface/meta-llama/Meta-Llama-3-8B-Instruct"
+    interpreter.llm.api_key = os.getenv("hf_token")
+    interpreter.llm.api_base = "https://api.groq.com/openai/v1"
+    interpreter.llm.api_key = os.getenv("api_key")
+    interpreter.llm.model = "Llama3-70b-8192"
 
-# interpreter.llm.fp16 = False  # 明示的にFP32を使用するように設定
-# interpreter --conversations
-# LLM設定の適用
-interpreter.llm.context_window = 4096  # 一般的なLLMのコンテキストウィンドウサイズ
-interpreter.context_window = 4096  # 一般的なLLMのコンテキストウィンドウサイズ
+    # interpreter.llm.fp16 = False  # 明示的にFP32を使用するように設定
+    # interpreter --conversations
+    # LLM設定の適用
+    interpreter.llm.context_window = 4096  # 一般的なLLMのコンテキストウィンドウサイズ
+    interpreter.context_window = 4096  # 一般的なLLMのコンテキストウィンドウサイズ
 
-interpreter.llm.max_tokens = 3000  # 1回のリクエストで処理するトークンの最大数
-interpreter.max_tokens = 3000  # 1回のリクエストで処理するトークンの最大数
+    interpreter.llm.max_tokens = 3000  # 1回のリクエストで処理するトークンの最大数
+    interpreter.max_tokens = 3000  # 1回のリクエストで処理するトークンの最大数
 
-interpreter.llm.max_output = 10000  # 出力の最大トークン数
-interpreter.max_output = 10000  # 出力の最大トークン数
-
-interpreter.conversation_history = True
-interpreter.debug_mode = False
-interpreter.temperature = 0.7
+    interpreter.llm.max_output = 10000  # 出力の最大トークン数
+    interpreter.max_output = 10000  # 出力の最大トークン数
+    
+    # Add system message
+    interpreter.system_message += CODE_INTERPRETER_SYSTEM_PROMPT
+    
+    return interpreter
 
 CODE_INTERPRETER_SYSTEM_PROMPT = (
     """
@@ -94,5 +98,3 @@ package/project.
 Python toolbelt preferences:
 - pytest
 - dataclasses"""
-
-interpreter.system_message += CODE_INTERPRETER_SYSTEM_PROMPT

@@ -97,11 +97,22 @@ def create_category_tab(interfaces: List[Tuple[Any, str]], category_name: str) -
             
             if len(interfaces) == 1:
                 # 1つの機能のみの場合、直接表示
-                interface_list[0].render()
+                interface = interface_list[0]
+                # Handle factory functions
+                if callable(interface) and not hasattr(interface, 'queue'):
+                    interface = interface()
+                interface.render()
             else:
                 # 複数の機能がある場合、サブタブで表示
+                # Handle factory functions in the list
+                processed_interfaces = []
+                for interface in interface_list:
+                    if callable(interface) and not hasattr(interface, 'queue'):
+                        interface = interface()
+                    processed_interfaces.append(interface)
+                
                 sub_tabs = gr.TabbedInterface(
-                    interface_list,
+                    processed_interfaces,
                     interface_names,
                     title=f"{category_name} 機能一覧"
                 )

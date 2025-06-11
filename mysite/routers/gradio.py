@@ -80,6 +80,11 @@ def include_gradio_interfaces():
                         'files': '📁 ファイル管理',
                         'gradio': '🌐 HTML表示',
                         'rpa_automation': '🤖 RPA自動化システム',
+                        'github_issue_dashboard': '🚀 GitHub ISSUE自動化',
+                        'github_issue_automation': '🤖 GitHub ISSUE自動生成システム',
+                        'integrated_approval_system': '🎯 統合承認システム',
+                        'integrated_dashboard': '🚀 統合管理ダッシュボード',
+                        'ui_verification_system': '🔧 UI検証・システム診断',
                     }
                     
                     # モジュールにtitle属性があるかチェック
@@ -101,7 +106,19 @@ def include_gradio_interfaces():
                         unique_name = f"{display_name} ({count})"
                         count += 1
 
-                    gradio_interfaces[unique_name] = module.gradio_interface
+                    # Handle factory functions specifically
+                    interface = module.gradio_interface
+                    
+                    # Check if it's a factory function by checking if it's callable but not a Gradio object
+                    # Gradio objects have 'queue' method, regular functions don't
+                    if callable(interface) and not hasattr(interface, 'queue'):
+                        try:
+                            interface = interface()
+                        except Exception as call_error:
+                            print(f"Failed to call factory function for {base_name}: {call_error}")
+                            continue  # Skip this interface if factory function fails
+                    
+                    gradio_interfaces[unique_name] = interface
             except ModuleNotFoundError as e:
                 print(f"ModuleNotFoundError: {sub_module_name} - {e}")
             except AttributeError as e:
@@ -116,7 +133,6 @@ def include_gradio_interfaces():
 
 
 def setup_gradio_interfaces():
-
     ##
     #from routers.gra_06_video.video import gradio_interface as video
     default_interfaces = []#,demo]
@@ -127,8 +143,35 @@ def setup_gradio_interfaces():
     all_interfaces = gradio_interfaces
     all_names = gradio_names
 
-    tabs = gr.TabbedInterface(all_interfaces, all_names)
-    tabs.queue()
-    return tabs
+    try:
+        # Create a fresh TabbedInterface to avoid rendering conflicts
+        tabs = gr.TabbedInterface(all_interfaces, all_names)
+        tabs.queue()
+        return tabs
+    except Exception as e:
+        print(f"❌ TabbedInterface creation failed: {e}")
+        # Fallback: create a simple interface with more interfaces including integrated dashboard
+        # Try to include at least 12 interfaces to capture the integrated dashboard (#11)
+        safe_interfaces = all_interfaces[:12] if len(all_interfaces) > 12 else all_interfaces
+        safe_names = all_names[:12] if len(all_names) > 12 else all_names
+        
+        if safe_interfaces:
+            try:
+                fallback_tabs = gr.TabbedInterface(safe_interfaces, safe_names)
+                fallback_tabs.queue()
+                return fallback_tabs
+            except Exception as fallback_error:
+                print(f"❌ Fallback interface creation failed: {fallback_error}")
+                # Return a minimal working interface
+                with gr.Blocks() as minimal_interface:
+                    gr.Markdown("# 🚀 システムが起動中です...")
+                    gr.Markdown("インターフェースの読み込みでエラーが発生しました。")
+                return minimal_interface
+        else:
+            # Return a minimal working interface
+            with gr.Blocks() as minimal_interface:
+                gr.Markdown("# 🚀 システムが起動中です...")
+                gr.Markdown("利用可能なインターフェースがありません。")
+            return minimal_interface
 if __name__ == "__main__":
     interfaces, names = include_gradio_interfaces()

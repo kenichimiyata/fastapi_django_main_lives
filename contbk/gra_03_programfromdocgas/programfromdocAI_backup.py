@@ -19,7 +19,10 @@ def init_db():
         CREATE TABLE IF NOT EXISTS prompts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
-            url TEXT,
+            github_url TEXT,
+            repository_name TEXT,
+            system_type TEXT,
+            execution_status TEXT,
             content TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

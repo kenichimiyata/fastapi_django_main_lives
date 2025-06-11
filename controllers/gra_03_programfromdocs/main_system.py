@@ -57,8 +57,7 @@ def create_enhanced_integrated_interface():
                             headers=["ID", "タイトル", "リポジトリ", "ステータス", "作成日時"],
                             datatype=["number", "str", "str", "str", "str"],
                             value=update_prompt_display(),
-                            interactive=False,
-                            height=350
+                            interactive=False
                         )
                         
                         # 更新ボタン

@@ -6,7 +6,12 @@ It exposes the ASGI callable as a module-level variable named ``application``.
 For more information on this file, see
 https://docs.djangoproject.com/en/dev/howto/deployment/asgi/
 """
+import sys
 import os
+
+# Add the project root to Python path
+sys.path.insert(0, '/workspaces/fastapi_django_main_live')
+
 import shutil
 import subprocess
 import duckdb

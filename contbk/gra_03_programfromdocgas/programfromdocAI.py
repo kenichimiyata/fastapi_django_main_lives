@@ -24,7 +24,10 @@ def init_db():
             CREATE TABLE IF NOT EXISTS prompts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
-                url TEXT,
+                github_url TEXT,
+                repository_name TEXT,
+                system_type TEXT,
+                execution_status TEXT,
                 content TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -68,8 +71,8 @@ def get_senario(id,res):
     return result
 """
             cursor.execute(
-                'INSERT INTO prompts (title, url, content) VALUES (?, ?, ?)',
-                ('デフォルト：Gradio + FastAPI作成', 'https://example.com', default_prompt)
+                'INSERT INTO prompts (title, github_url, repository_name, system_type, execution_status, content) VALUES (?, ?, ?, ?, ?, ?)',
+                ('デフォルト：Gradio + FastAPI作成', 'https://github.com/example/repo', 'fastapi-gradio-template', 'development', 'pending', default_prompt)
             )
         
         conn.commit()
@@ -78,7 +81,7 @@ def get_senario(id,res):
     except Exception as e:
         print(f"❌ データベース初期化エラー: {e}")
 
-def save_prompt(title: str, url: str, content: str) -> str:
+def save_prompt(title: str, github_url: str, repository_name: str, system_type: str, execution_status: str, content: str) -> str:
     """プロンプトを保存"""
     try:
         if not title.strip() or not content.strip():
@@ -88,8 +91,8 @@ def save_prompt(title: str, url: str, content: str) -> str:
         cursor = conn.cursor()
         
         cursor.execute(
-            'INSERT INTO prompts (title, url, content) VALUES (?, ?, ?)',
-            (title.strip(), url.strip(), content.strip())
+            'INSERT INTO prompts (title, github_url, repository_name, system_type, execution_status, content) VALUES (?, ?, ?, ?, ?, ?)',
+            (title.strip(), github_url.strip(), repository_name.strip(), system_type.strip(), execution_status.strip(), content.strip())
         )
         
         conn.commit()
@@ -106,7 +109,7 @@ def get_prompts() -> List[Tuple]:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        cursor.execute('SELECT id, title, url, created_at FROM prompts ORDER BY created_at DESC')
+        cursor.execute('SELECT id, title, github_url, created_at FROM prompts ORDER BY created_at DESC')
         prompts = cursor.fetchall()
         
         conn.close()
@@ -160,7 +163,7 @@ def get_prompt_choices():
     prompts = get_prompts()
     choices = []
     for prompt in prompts:
-        id_, title, url, created_at = prompt
+        id_, title, github_url, created_at = prompt
         display_text = f"[{id_}] {title} ({created_at[:10]})"
         choices.append((display_text, str(id_)))
     return choices
@@ -183,7 +186,14 @@ with gr.Blocks(title="🚀 プロンプト管理 & コード生成", theme=gr.th
                 with gr.Column(scale=1):
                     # プロンプト保存フォーム
                     save_title = gr.Textbox(label="📋 タイトル", placeholder="例: FastAPI + Gradio作成プロンプト")
-                    save_url = gr.Textbox(label="🔗 参考URL (任意)", placeholder="https://example.com")
+                    save_github_url = gr.Textbox(label="🔗 GitHub URL (任意)", placeholder="https://github.com/username/repo")
+                    save_repository_name = gr.Textbox(label="📦 リポジトリ名", placeholder="例: my-project")
+                    save_system_type = gr.Textbox(label="🏗️ システム種別", placeholder="例: web-app, api, cli")
+                    save_execution_status = gr.Dropdown(
+                        choices=["pending", "running", "completed", "failed"],
+                        label="⚡ 実行ステータス",
+                        value="pending"
+                    )
                     save_content = gr.Textbox(
                         label="📝 プロンプト内容", 
                         lines=10,
@@ -233,8 +243,8 @@ with gr.Blocks(title="🚀 プロンプト管理 & コード生成", theme=gr.th
                     result_output = gr.Textbox(label="📤 生成結果", lines=10, interactive=False)
     
     # イベントハンドラー
-    def handle_save_prompt(title, url, content):
-        result = save_prompt(title, url, content)
+    def handle_save_prompt(title, github_url, repository_name, system_type, execution_status, content):
+        result = save_prompt(title, github_url, repository_name, system_type, execution_status, content)
         # 保存後に一覧を更新
         updated_dropdown = refresh_prompt_dropdown()
         print(f"💾 保存後の一覧更新完了")
@@ -285,7 +295,7 @@ with gr.Blocks(title="🚀 プロンプト管理 & コード生成", theme=gr.th
     # イベント接続
     save_btn.click(
         handle_save_prompt,
-        inputs=[save_title, save_url, save_content],
+        inputs=[save_title, save_github_url, save_repository_name, save_system_type, save_execution_status, save_content],
         outputs=[save_status, prompt_dropdown]
     )
     

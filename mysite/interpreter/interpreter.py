@@ -8,13 +8,15 @@ import time
 from mysite.logger import logger
 import async_timeout
 import asyncio
-import mysite.interpreter.interpreter_config 
+from mysite.interpreter.interpreter_config import configure_interpreter
 from fastapi import HTTPException
 from groq import Groq
 
 # Try to import open-interpreter, but handle if it's not available
 try:
     from interpreter import interpreter
+    # Configure interpreter without circular import
+    interpreter = configure_interpreter()
 except ImportError:
     print("Warning: open-interpreter not available. Some features may not work.")
     interpreter = None

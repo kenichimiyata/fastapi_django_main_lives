@@ -245,8 +245,7 @@ def create_dashboard_interface():
                     headers=["システム名", "タイプ", "ファイル数", "サイズ", "パス"],
                     datatype=["str", "str", "str", "str", "str"],
                     value=[],
-                    interactive=False,
-                    height=300
+                    interactive=False
                 )
         
         with gr.Row():
