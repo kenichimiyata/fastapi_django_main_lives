@@ -20,5 +20,7 @@ jobs:
         git config --global user.name "GitHub Action"
         
         git remote add hf https://oauth2:${HF_TOKEN}@huggingface.co/spaces/kenken999/fastapi_django_main_live
+        git fetch hf
+        git merge hf/main --allow-unrelated-histories || true
         git push hf main
         echo "✅ Deployed to Hugging Face Spaces"
