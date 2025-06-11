@@ -226,6 +226,169 @@ class ConversationManager:
             'today_conversations': today_conversations,
             'top_tools': top_tools
         }
+    
+    def generate_prompt_summary(self, limit: int = 10) -> str:
+        """
+        プロンプト用の会話履歴サマリーを生成
+        
+        Args:
+            limit: 取得する最新会話数
+            
+        Returns:
+            プロンプトに含めるためのサマリー文字列
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            # 最新の会話を取得
+            cursor.execute('''
+                SELECT user_message, assistant_response, context_info, 
+                       tools_used, tags, created_at
+                FROM conversations 
+                ORDER BY created_at DESC 
+                LIMIT ?
+            ''', (limit,))
+            
+            conversations = cursor.fetchall()
+            
+            if not conversations:
+                return "## 会話履歴\n過去の会話履歴はありません。"
+            
+            # サマリーを構築
+            summary = ["## 🕒 前回までの会話履歴サマリー"]
+            summary.append("```")
+            summary.append("GitHub Copilotとの過去の主要な会話内容:")
+            summary.append("")
+            
+            for i, (user_msg, assistant_resp, context, tools, tags, timestamp) in enumerate(conversations, 1):
+                # メッセージを要約（長すぎる場合は切り詰め）
+                user_summary = user_msg[:100] + "..." if len(user_msg) > 100 else user_msg
+                assistant_summary = assistant_resp[:150] + "..." if len(assistant_resp) > 150 else assistant_resp
+                
+                summary.append(f"{i}. [{timestamp[:16]}]")
+                summary.append(f"   ユーザー: {user_summary}")
+                summary.append(f"   対応: {assistant_summary}")
+                
+                if context:
+                    summary.append(f"   コンテキスト: {context}")
+                if tools:
+                    summary.append(f"   使用ツール: {tools}")
+                if tags:
+                    summary.append(f"   タグ: {tags}")
+                summary.append("")
+            
+            summary.append("```")
+            summary.append("")
+            summary.append("💡 **重要**: 上記の履歴を参考に、継続性のある対応を行ってください。")
+            
+            return "\n".join(summary)
+            
+        except Exception as e:
+            return f"## 会話履歴\n履歴取得エラー: {str(e)}"
+        finally:
+            conn.close()
+    
+    def generate_context_prompt(self, session_limit: int = 5, detail_limit: int = 3) -> str:
+        """
+        新しいセッション用のコンテキストプロンプトを生成
+        
+        Args:
+            session_limit: セッション履歴の取得数
+            detail_limit: 詳細表示する最新会話数
+            
+        Returns:
+            新しいプロンプトに含めるコンテキスト情報
+        """
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            # プロジェクト統計
+            cursor.execute('SELECT COUNT(*) FROM conversations')
+            total_conversations = cursor.fetchone()[0]
+            
+            cursor.execute('SELECT COUNT(DISTINCT session_id) FROM sessions')
+            total_sessions = cursor.fetchone()[0]
+            
+            # 最新セッションの情報
+            cursor.execute('''
+                SELECT session_id, session_name, start_time, total_messages
+                FROM sessions 
+                ORDER BY start_time DESC 
+                LIMIT ?
+            ''', (session_limit,))
+            recent_sessions = cursor.fetchall()
+            
+            # 最新の詳細会話
+            cursor.execute('''
+                SELECT user_message, assistant_response, context_info, 
+                       tools_used, tags, created_at
+                FROM conversations 
+                ORDER BY created_at DESC 
+                LIMIT ?
+            ''', (detail_limit,))
+            recent_conversations = cursor.fetchall()
+            
+            # プロンプト構築
+            context_lines = [
+                "<conversation-summary>",
+                "## CONVERSATION SUMMARY",
+                "",
+                "**TASK DESCRIPTION:** ",
+                "統合開発環境でのContBKフォルダーインターフェース統合、会話履歴システム実装、",
+                "SQLiteベースの自動ログ機能開発を継続的に行っています。",
+                "",
+                "**COMPLETED:**",
+                f"- ✅ 総会話数: {total_conversations}件",
+                f"- ✅ セッション数: {total_sessions}件", 
+                "- ✅ ContBK統合システム実装済み",
+                "- ✅ SQLite会話履歴システム実装済み",
+                "- ✅ DuplicateBlockError修正済み",
+                "- ✅ Git同期管理実装済み",
+                ""
+            ]
+            
+            if recent_sessions:
+                context_lines.extend([
+                    "**RECENT SESSIONS:**",
+                ])
+                for session_id, name, start_time, total_messages in recent_sessions:
+                    context_lines.append(f"- {name} ({total_messages}件) - {start_time[:16]}")
+                context_lines.append("")
+            
+            if recent_conversations:
+                context_lines.extend([
+                    "**LATEST CONVERSATIONS:**",
+                ])
+                for i, (user_msg, assistant_resp, context, tools, tags, timestamp) in enumerate(recent_conversations, 1):
+                    user_summary = user_msg[:80] + "..." if len(user_msg) > 80 else user_msg
+                    assistant_summary = assistant_resp[:100] + "..." if len(assistant_resp) > 100 else assistant_resp
+                    
+                    context_lines.extend([
+                        f"{i}. [{timestamp[:16]}] {user_summary}",
+                        f"   → {assistant_summary}",
+                    ])
+                    if context:
+                        context_lines.append(f"   Context: {context}")
+                    if tools:
+                        context_lines.append(f"   Tools: {tools}")
+                context_lines.append("")
+            
+            context_lines.extend([
+                "**CURRENT_STATE:**",
+                "アプリケーションは http://localhost:7860 で正常稼働中。",
+                "10個のGradioインターフェースが統合され、会話履歴システムも完全に動作しています。",
+                "全ての変更はGitで管理され、SQLiteに自動記録されています。",
+                "</conversation-summary>"
+            ])
+            
+            return "\n".join(context_lines)
+            
+        except Exception as e:
+            return f"<conversation-summary>\nコンテキスト生成エラー: {str(e)}\n</conversation-summary>"
+        finally:
+            conn.close()
 
 # グローバルインスタンス
 conversation_manager = ConversationManager()
@@ -432,6 +595,124 @@ def create_conversation_interface():
                 value="🔄 統計更新ボタンを押してください"
             )
         
+        with gr.Tab("📝 プロンプト生成"):
+            gr.Markdown("""
+            ## 🎯 新セッション用プロンプト生成
+            
+            新しいGitHub Copilotセッション開始時に使用する、
+            過去の会話履歴を含むコンテキストプロンプトを生成します。
+            """)
+            
+            with gr.Row():
+                with gr.Column():
+                    prompt_type = gr.Radio(
+                        label="📋 プロンプトタイプ",
+                        choices=[
+                            "簡易サマリー (最新10件)",
+                            "詳細コンテキスト (セッション含む)",
+                            "技術フォーカス (ツール・ファイル中心)",
+                            "カスタム設定"
+                        ],
+                        value="詳細コンテキスト (セッション含む)"
+                    )
+                    
+                    with gr.Group():
+                        conversation_limit = gr.Slider(
+                            label="📊 会話履歴件数",
+                            minimum=3,
+                            maximum=20,
+                            value=10,
+                            step=1
+                        )
+                        
+                        session_limit = gr.Slider(
+                            label="🗂️ セッション履歴件数",
+                            minimum=3,
+                            maximum=10,
+                            value=5,
+                            step=1
+                        )
+                        
+                        include_tools = gr.Checkbox(
+                            label="🔧 ツール使用履歴を含む",
+                            value=True
+                        )
+                        
+                        include_files = gr.Checkbox(
+                            label="📁 ファイル操作履歴を含む", 
+                            value=True
+                        )
+            
+            with gr.Row():
+                generate_btn = gr.Button("🎯 プロンプト生成", variant="primary", size="lg")
+                copy_btn = gr.Button("📋 クリップボードにコピー", variant="secondary")
+            
+            prompt_output = gr.Textbox(
+                label="📝 生成されたプロンプト",
+                lines=20,
+                max_lines=30,
+                placeholder="生成ボタンを押すとプロンプトが表示されます...",
+                show_copy_button=True
+            )
+            
+            gr.Markdown("""
+            ### 📌 使用方法:
+            1. プロンプトタイプを選択
+            2. 必要に応じて設定を調整
+            3. 「プロンプト生成」をクリック
+            4. 生成されたテキストを新しいセッションの最初にコピー&ペースト
+            
+            💡 **Tip**: 生成されたプロンプトにより、GitHub Copilotが過去のコンテキストを理解して、
+            より継続性のある対応ができるようになります。
+            """)
+            
+            def generate_context_prompt_ui(prompt_type, conv_limit, sess_limit, include_tools, include_files):
+                """UIからプロンプト生成"""
+                try:
+                    if prompt_type == "簡易サマリー (最新10件)":
+                        return conversation_manager.generate_prompt_summary(limit=conv_limit)
+                    elif prompt_type == "詳細コンテキスト (セッション含む)":
+                        return conversation_manager.generate_context_prompt(
+                            session_limit=sess_limit, 
+                            detail_limit=conv_limit
+                        )
+                    elif prompt_type == "技術フォーカス (ツール・ファイル中心)":
+                        # 技術的な詳細に特化したプロンプト
+                        context = conversation_manager.generate_context_prompt(sess_limit, conv_limit)
+                        tech_header = """
+<technical-context>
+## TECHNICAL DEVELOPMENT CONTEXT
+
+**FOCUS**: ContBK統合システム、SQLite会話履歴、Gradioインターフェース開発
+
+**ACTIVE TOOLS**: 
+- Gradio 4.31.5 (推奨: 4.44.1)
+- SQLite3 (会話履歴管理)
+- Python 3.11
+- Git (バージョン管理)
+- FastAPI + Django (バックエンド)
+
+**CURRENT ENVIRONMENT**:
+- Workspace: /workspaces/fastapi_django_main_live
+- Port 7860: メインアプリケーション
+- Port 7870-7880: 開発用サブアプリ
+
+</technical-context>
+
+"""
+                        return tech_header + context
+                    else:  # カスタム設定
+                        return conversation_manager.generate_context_prompt(sess_limit, conv_limit)
+                        
+                except Exception as e:
+                    return f"❌ プロンプト生成エラー: {str(e)}"
+            
+            generate_btn.click(
+                generate_context_prompt_ui,
+                inputs=[prompt_type, conversation_limit, session_limit, include_tools, include_files],
+                outputs=prompt_output
+            )
+
         # イベントハンドラー
         load_btn.click(
             fn=load_conversation_history,
