@@ -303,9 +303,13 @@ def create_unified_dashboard() -> gr.TabbedInterface:
         )
 
 print("🚀 Creating gradio_interface...")
-# このファイルのメインエクスポート
+# このファイルのメインエクスポート - 美しいタイトル付き
 gradio_interface = create_unified_dashboard()
 print("✅ gradio_interface created successfully")
+
+# 自動検出システム用のメタデータ
+interface_title = "🎯 ContBK ダッシュボード"
+interface_description = "ContBKフォルダーの全インターフェースを統合表示"
 
 # テスト実行用
 if __name__ == "__main__":

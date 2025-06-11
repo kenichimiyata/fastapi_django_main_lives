@@ -6,6 +6,23 @@ from dotenv import load_dotenv
 # .envファイルから環境変数を読み込み
 load_dotenv()
 
+# デバッグサーバーの設定
+def setup_debug_server():
+    """デバッグサーバーをセットアップ"""
+    try:
+        import debugpy
+        if not debugpy.is_client_connected():
+            print("🔧 デバッグサーバーを起動中...")
+            debugpy.listen(("0.0.0.0", 5678))
+            print("✅ デバッグサーバーがポート5678で待機中")
+            print("💡 VS Codeで 'Remote Attach' を使用してアタッチできます")
+        else:
+            print("🔗 デバッグクライアントが既に接続されています")
+    except ImportError:
+        print("⚠️  debugpy がインストールされていません。通常のデバッグモードで継続します")
+    except Exception as e:
+        print(f"⚠️  デバッグサーバー起動エラー: {e}")
+
 from fastapi import FastAPI
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
@@ -45,6 +62,10 @@ if __name__ == "__main__":
     # デバッグモードかどうかを判定
     is_debug = "--debug" in sys.argv or any("debugpy" in arg for arg in sys.argv)
     
+    # デバッグモードの場合、デバッグサーバーをセットアップ
+    if is_debug:
+        setup_debug_server()
+    
     # 実行環境の表示
     if os.getenv("SPACE_ID"):
         print("🤗 Hugging Face Spaces環境で実行中")
@@ -53,6 +74,9 @@ if __name__ == "__main__":
     
     try:
         print("🚀 アプリケーションを開始しています...")
+        
+        # デバッグサーバーのセットアップ
+        setup_debug_server()
         
         if is_debug:
             print("🐛 デバッグモード: リロードを無効化してブレークポイントを有効にします")

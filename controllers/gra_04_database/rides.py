@@ -1,5 +1,6 @@
 import gradio as gr
 import psycopg2
+import os
 from dataclasses import dataclass, field
 from typing import List, Optional
 from mysite.interpreter.process import no_process_file,process_file
@@ -157,6 +158,10 @@ with gr.Blocks() as gradio_interface:
     read_button.click(fn=read_rides_click, outputs=output)
     
     output.select(fn=load_ride_details, inputs=None, outputs=[rideable_type, start_station_id, start_station_name, end_station_id, end_station_name, started_at, ended_at, member_casual, ride_id])
+
+# 自動検出システム用のメタデータ
+interface_title = "🚗 データベース管理"
+interface_description = "PostgreSQL CRUD操作インターフェース"
 
 #return interface
 

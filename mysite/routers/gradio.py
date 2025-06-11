@@ -46,14 +46,42 @@ def include_gradio_interfaces():
                 if hasattr(module, "gradio_interface"):
                     print(f"Found gradio_interface in {sub_module_name}")
 
-                    # 名前の一意性を保証する処理
+                    # 美しいタイトルを生成（絵文字付き）
                     base_name = module_info.name
-                    unique_name = base_name
+                    
+                    # 特定のモジュールに対する美しいタイトルマッピング
+                    title_mapping = {
+                        'contbk_example': '🎯 ContBK ダッシュボード',
+                        'contbk_dashboard': '📊 ContBK 統合',
+                        'example_gradio_interface': '🔧 サンプル',
+                        'hasura': '🗄️ Hasura API',
+                        'Chat': '💬 チャット',
+                        'OpenInterpreter': '🤖 AI インタープリター',
+                        'programfromdoc': '📄 ドキュメント生成',
+                        'gradio_interface': '🚀 AI開発',
+                        'lavelo': '💾 プロンプト管理',
+                        'rides': '🚗 データベース',
+                        'files': '📁 ファイル管理',
+                        'gradio': '🌐 HTML表示',
+                    }
+                    
+                    # モジュールにtitle属性があるかチェック
+                    if hasattr(module, 'interface_title'):
+                        display_name = module.interface_title
+                    elif base_name in title_mapping:
+                        display_name = title_mapping[base_name]
+                    else:
+                        # デフォルトの美しいタイトル生成
+                        formatted_name = base_name.replace('_', ' ').title()
+                        display_name = f"✨ {formatted_name}"
+
+                    # 名前の一意性を保証する処理
+                    unique_name = display_name
                     count = 1
 
-                    # 重複がある場合は `_1`, `_2`, ... を付与
+                    # 重複がある場合は番号を付与
                     while unique_name in gradio_interfaces:
-                        unique_name = f"{base_name}_{count}"
+                        unique_name = f"{display_name} ({count})"
                         count += 1
 
                     gradio_interfaces[unique_name] = module.gradio_interface

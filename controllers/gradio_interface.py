@@ -199,3 +199,7 @@ with gr.Blocks(title="🤖 AI Development Platform", theme=gr.themes.Soft()) as 
                         fn=check_llamafactory_setup,
                         outputs=[setup_output, setup_output]
                     )
+
+# 自動検出システム用のメタデータ
+interface_title = "🚀 AI開発プラットフォーム"
+interface_description = "LlamaFactory WebUIとAI開発ツール"

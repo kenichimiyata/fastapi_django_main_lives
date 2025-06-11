@@ -113,3 +113,7 @@ with gr.Blocks(fill_height=True, css=css) as gradio_interface:
     )
 
     gr.Markdown(LICENSE)
+
+# 自動検出システム用のメタデータ
+interface_title = "💬 AIチャット"
+interface_description = "高度なAIチャットインターフェース"

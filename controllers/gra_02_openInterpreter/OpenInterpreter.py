@@ -401,6 +401,10 @@ gradio_interface = gr.ChatInterface(
     cache_examples=False,
 )
 
+# 自動検出システム用のメタデータ
+interface_title = "🤖 Open Interpreter"
+interface_description = "コード実行・解釈AIシステム"
+
 if __name__ == '__main__':
     message = f"""
     postgres connection is this postgresql://miyataken999:yz1wPf4KrWTm@ep-odd-mode-93794521.us-east-2.aws.neon.tech/neondb?sslmode=require
