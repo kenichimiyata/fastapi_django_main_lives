@@ -6,10 +6,150 @@ import duckdb
 import gradio as gr
 import psycopg2
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from mysite.interpreter.process import no_process_file,process_file,process_nofile
 #from controllers.gra_04_database.rides import test_set_lide
 import requests
+import sqlite3
+import os
+from datetime import datetime
+
+# データベース設定
+DB_PATH = "prompts.db"
+
+def init_db():
+    """プロンプトデータベースの初期化"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS prompts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                url TEXT,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # デフォルトプロンプトの追加（初回のみ）
+        cursor.execute('SELECT COUNT(*) FROM prompts')
+        if cursor.fetchone()[0] == 0:
+            default_prompts = [
+                ("社員プロフィールシステム", "", val),
+                ("FastAPI + SQLAlchemy", "", "FastAPIとSQLAlchemyを使用したAPIの作成\n- ユーザー管理\n- 認証機能\n- CRUD操作"),
+                ("Gradio Interface", "", "Gradioインターフェースの作成\n- ファイルアップロード\n- チャット機能\n- データ表示"),
+            ]
+            
+            for title, url, content in default_prompts:
+                cursor.execute(
+                    'INSERT INTO prompts (title, url, content) VALUES (?, ?, ?)',
+                    (title, url, content)
+                )
+        
+        conn.commit()
+        conn.close()
+        print("✅ プロンプトデータベース初期化完了")
+        
+    except Exception as e:
+        print(f"❌ データベース初期化エラー: {e}")
+
+def save_prompt(title: str, content: str) -> str:
+    """プロンプトを保存"""
+    try:
+        if not title.strip() or not content.strip():
+            return "❌ タイトルと内容は必須です"
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            'INSERT INTO prompts (title, url, content) VALUES (?, ?, ?)',
+            (title.strip(), "", content.strip())
+        )
+        
+        conn.commit()
+        conn.close()
+        print(f"✅ プロンプト保存: {title}")
+        return f"✅ プロンプト「{title}」を保存しました"
+        
+    except Exception as e:
+        print(f"❌ プロンプト保存エラー: {e}")
+        return f"❌ 保存エラー: {e}"
+
+def get_prompts() -> List[Tuple]:
+    """全プロンプトを取得"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT id, title, created_at FROM prompts ORDER BY created_at DESC')
+        prompts = cursor.fetchall()
+        
+        conn.close()
+        print(f"✅ プロンプト取得: {len(prompts)}件")
+        return prompts
+    except Exception as e:
+        print(f"❌ プロンプト取得エラー: {e}")
+        return []
+
+def get_prompt_content(prompt_id: int) -> str:
+    """指定IDのプロンプト内容を取得"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT content FROM prompts WHERE id = ?', (prompt_id,))
+        result = cursor.fetchone()
+        
+        conn.close()
+        
+        if result:
+            print(f"✅ プロンプト内容取得: ID {prompt_id}")
+            return result[0]
+        else:
+            print(f"❌ プロンプトが見つかりません: ID {prompt_id}")
+            return ""
+            
+    except Exception as e:
+        print(f"❌ プロンプト内容取得エラー: {e}")
+        return ""
+
+def delete_prompt(prompt_id: int) -> str:
+    """プロンプトを削除"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('DELETE FROM prompts WHERE id = ?', (prompt_id,))
+        
+        if cursor.rowcount > 0:
+            conn.commit()
+            conn.close()
+            print(f"✅ プロンプト削除: ID {prompt_id}")
+            return f"✅ プロンプト ID {prompt_id} を削除しました"
+        else:
+            conn.close()
+            return f"❌ プロンプト ID {prompt_id} が見つかりません"
+            
+    except Exception as e:
+        print(f"❌ プロンプト削除エラー: {e}")
+        return f"❌ 削除エラー: {e}"
+
+def update_prompt_display():
+    """プロンプト一覧の表示を更新"""
+    prompts = get_prompts()
+    if prompts:
+        # テーブル形式でデータを準備
+        table_data = []
+        for prompt_id, title, created_at in prompts:
+            # 日時の表示を短くする
+            date_str = created_at[:16] if created_at else ""
+            table_data.append([prompt_id, title, date_str])
+        return table_data
+    return []
 
 val = """
 # 社員がプロフィールを登録・公開し、お互いに参照できるシステム
@@ -106,14 +246,112 @@ def send_to_google_chat(message: str):
 def process_file_and_notify(*args, **kwargs):
     result = process_nofile(*args, **kwargs)
     send_to_google_chat(result)
+    
+    # プロンプト実行後、内容をデータベースに保存
+    try:
+        prompt_content = args[0] if args else ""
+        if prompt_content.strip():
+            # 実行されたプロンプトのタイトルを生成（最初の行または最初の50文字）
+            title_lines = prompt_content.strip().split('\n')
+            title = title_lines[0][:50] if title_lines[0] else "実行されたプロンプト"
+            if title.startswith('#'):
+                title = title[1:].strip()
+            
+            save_prompt(f"実行履歴: {title}", prompt_content)
+    except Exception as e:
+        print(f"実行履歴保存エラー: {e}")
+    
     return result
 
-gradio_interface = gr.Interface(
-    fn=process_file_and_notify,
-    inputs=[
-        gr.Textbox(label="Additional Notes", lines=10,value=val),
-        gr.Textbox(label="Folder Name",value="test_folders"),
-        gr.Textbox(label="github token",value="***********************"),
-    ],
-    outputs="text",
-)
+def load_prompt_to_textbox(evt: gr.SelectData):
+    """テーブルクリック時にプロンプト内容をテキストボックスに読み込む"""
+    try:
+        if evt.index is not None and len(evt.index) >= 2:
+            # テーブルの行インデックスから prompt_id を取得
+            prompts = get_prompts()
+            if evt.index[0] < len(prompts):
+                prompt_id = prompts[evt.index[0]][0]  # 最初の列がID
+                content = get_prompt_content(prompt_id)
+                return content
+    except Exception as e:
+        print(f"プロンプト読み込みエラー: {e}")
+    return ""
+
+# データベース初期化
+init_db()
+
+with gr.Blocks() as gradio_interface:
+    gr.Markdown("# プロンプト管理システム")
+    
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown("## 📚 プロンプト一覧")
+            
+            # プロンプト一覧テーブル
+            prompt_table = gr.Dataframe(
+                headers=["ID", "タイトル", "作成日時"],
+                datatype=["number", "str", "str"],
+                value=update_prompt_display(),
+                interactive=False,
+                height=300
+            )
+            
+            # 更新ボタン
+            refresh_btn = gr.Button("🔄 一覧更新", variant="secondary")
+            
+            # プロンプト保存エリア
+            gr.Markdown("## 💾 プロンプト保存")
+            with gr.Row():
+                save_title = gr.Textbox(label="タイトル", placeholder="プロンプトのタイトルを入力")
+                save_btn = gr.Button("💾 保存", variant="primary")
+            save_result = gr.Textbox(label="保存結果", interactive=False)
+        
+        with gr.Column(scale=2):
+            gr.Markdown("## ⚡ プロンプト実行")
+            
+            # メインのプロンプト入力エリア
+            prompt_input = gr.Textbox(
+                label="プロンプト内容", 
+                lines=15,
+                value=val,
+                placeholder="プロンプトを入力するか、左の一覧からクリックして選択してください"
+            )
+            
+            with gr.Row():
+                folder_name = gr.Textbox(label="フォルダ名", value="test_folders")
+                github_token = gr.Textbox(label="GitHub Token", value="***********************", type="password")
+            
+            execute_btn = gr.Button("🚀 実行", variant="primary", size="lg")
+            result_output = gr.Textbox(label="実行結果", lines=10, interactive=False)
+    
+    # イベントハンドラー
+    prompt_table.select(
+        fn=load_prompt_to_textbox,
+        outputs=prompt_input
+    )
+    
+    refresh_btn.click(
+        fn=update_prompt_display,
+        outputs=prompt_table
+    )
+    
+    save_btn.click(
+        fn=lambda title, content: save_prompt(title, content),
+        inputs=[save_title, prompt_input],
+        outputs=save_result
+    ).then(
+        fn=update_prompt_display,
+        outputs=prompt_table
+    ).then(
+        fn=lambda: "",
+        outputs=save_title
+    )
+    
+    execute_btn.click(
+        fn=process_file_and_notify,
+        inputs=[prompt_input, folder_name, github_token],
+        outputs=result_output
+    ).then(
+        fn=update_prompt_display,
+        outputs=prompt_table
+    )

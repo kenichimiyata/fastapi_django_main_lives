@@ -7,7 +7,7 @@ COLOR_CYAN=\033[1;36m
 COLOR_GREEN=\033[1;32m
 
 # Defines the targets help, install, dev-install, and run as phony targets.
-.PHONY: help install run
+.PHONY: help install run dev debug app server test clean requirements
 
 #sets the default goal to help when no target is specified on the command line.
 .DEFAULT_GOAL := help
@@ -24,6 +24,13 @@ help:
 	@echo "  help           	Return this message with usage instructions."
 	@echo "  install        	Will install the dependencies using Poetry."
 	@echo "  run <folder_name>  Runs GPT Engineer on the folder with the given name."
+	@echo "  app            	Run the main FastAPI application (app.py)"
+	@echo "  dev            	Run the application in development mode with hot reload"
+	@echo "  debug          	Run the application in debug mode (no reload)"
+	@echo "  server         	Run the ASGI server directly with uvicorn"
+	@echo "  test           	Run all tests"
+	@echo "  requirements   	Install Python requirements from requirements.txt"
+	@echo "  clean          	Clean up temporary files and caches"
 
 #Defines a target named install. This target will install the project using Poetry.
 install: poetry-install install-pre-commit farewell
@@ -71,3 +78,66 @@ cloc:
 
 ssh:
 	ssh-keygen -t rsa -b 4096 \-f ~/.ssh/id_rsa_new
+
+# Application commands
+app:
+	@echo -e "$(COLOR_CYAN)Starting FastAPI application...$(COLOR_RESET)"
+	SPACE_ID="" python app.py
+
+dev:
+	@echo -e "$(COLOR_CYAN)Starting application in development mode...$(COLOR_RESET)"
+	SPACE_ID="" python app.py
+
+debug:
+	@echo -e "$(COLOR_CYAN)Starting application in debug mode...$(COLOR_RESET)"
+	SPACE_ID="" python app.py --debug
+
+server:
+	@echo -e "$(COLOR_CYAN)Starting ASGI server directly...$(COLOR_RESET)"
+	uvicorn mysite.asgi:app --host 0.0.0.0 --port 7860 --reload
+
+# Requirements and dependencies
+requirements:
+	@echo -e "$(COLOR_CYAN)Installing Python requirements...$(COLOR_RESET)"
+	pip install -r requirements.txt
+
+# Testing
+test:
+	@echo -e "$(COLOR_CYAN)Running tests...$(COLOR_RESET)"
+	python -m pytest tests/ -v
+
+# Utility commands
+clean:
+	@echo -e "$(COLOR_CYAN)Cleaning up temporary files...$(COLOR_RESET)"
+	find . -type f -name "*.pyc" -delete
+	find . -type d -name "__pycache__" -delete
+	find . -type d -name "*.egg-info" -exec rm -rf {} +
+	rm -rf .pytest_cache/
+	rm -rf build/
+	rm -rf dist/
+
+# Database commands
+migrate:
+	@echo -e "$(COLOR_CYAN)Running database migrations...$(COLOR_RESET)"
+	python manage.py migrate
+
+makemigrations:
+	@echo -e "$(COLOR_CYAN)Creating database migrations...$(COLOR_RESET)"
+	python manage.py makemigrations
+
+# Docker commands
+docker-build:
+	@echo -e "$(COLOR_CYAN)Building Docker image...$(COLOR_RESET)"
+	docker-compose build
+
+docker-up:
+	@echo -e "$(COLOR_CYAN)Starting Docker containers...$(COLOR_RESET)"
+	docker-compose up -d
+
+docker-down:
+	@echo -e "$(COLOR_CYAN)Stopping Docker containers...$(COLOR_RESET)"
+	docker-compose down
+
+docker-logs:
+	@echo -e "$(COLOR_CYAN)Showing Docker logs...$(COLOR_RESET)"
+	docker-compose logs -f

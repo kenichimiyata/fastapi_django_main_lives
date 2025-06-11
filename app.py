@@ -33,28 +33,23 @@ from interpreter import interpreter
 import os
 
 GENERATION_TIMEOUT_SEC = 60
-import os
-
-from llamafactory.webui.interface import create_ui
-
-# Gradio インターフェース作成
-demo = create_ui()
 
 if __name__ == "__main__":
     import sys
     
-    # Hugging Face Spacesでの実行を検出
-    if os.getenv("SPACE_ID") or "--gradio" in sys.argv:
-        print("🤗 Hugging Face Spacesでアプリケーションを起動しています...")
-        demo.launch(
-            server_name="0.0.0.0",
-            server_port=7860,
-            share=True,
-            show_error=True
-        )
+    # デバッグ: コマンドライン引数と環境変数を確認
+    print(f"🔍 sys.argv: {sys.argv}")
+    print(f"🔍 SPACE_ID環境変数: {os.getenv('SPACE_ID')}")
+    print(f"🔍 '--gradio' in sys.argv: {'--gradio' in sys.argv}")
+    
+    # デバッグモードかどうかを判定
+    is_debug = "--debug" in sys.argv or any("debugpy" in arg for arg in sys.argv)
+    
+    # 実行環境の表示
+    if os.getenv("SPACE_ID"):
+        print("🤗 Hugging Face Spaces環境で実行中")
     else:
-        # デバッグモードかどうかを判定
-        is_debug = "--debug" in sys.argv or any("debugpy" in arg for arg in sys.argv)
+        print("💻 ローカル開発環境で実行中")
     
     try:
         print("🚀 アプリケーションを開始しています...")
