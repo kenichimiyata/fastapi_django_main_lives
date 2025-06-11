@@ -278,6 +278,237 @@ class RPAManager:
             
             return None, error_msg
     
+    async def collect_images_from_page(self, url: str, image_selector: str = "img", 
+                                      download_path: str = None, limit: int = 10) -> Tuple[List[str], str]:
+        """
+        ウェブページから画像を取得・ダウンロード
+        
+        Args:
+            url: 対象URL
+            image_selector: 画像要素のセレクタ（デフォルト: "img"）
+            download_path: ダウンロード先パス
+            limit: 取得画像数の上限
+            
+        Returns:
+            (ダウンロードファイルパスのリスト, メッセージ)
+        """
+        if not PLAYWRIGHT_AVAILABLE:
+            return [], "Playwright がインストールされていません"
+        
+        if not download_path:
+            download_path = "/workspaces/fastapi_django_main_live/docs/images/collected"
+        
+        import os
+        import requests
+        from urllib.parse import urljoin, urlparse
+        from pathlib import Path
+        
+        # ダウンロードディレクトリ作成
+        Path(download_path).mkdir(parents=True, exist_ok=True)
+        
+        try:
+            async with async_playwright() as p:
+                browser = await p.chromium.launch(headless=True)
+                context = await browser.new_context()
+                page = await context.new_page()
+                
+                await page.goto(url, wait_until="networkidle")
+                await asyncio.sleep(2)
+                
+                # 画像要素を取得
+                image_elements = await page.query_selector_all(image_selector)
+                print(f"🖼️ {len(image_elements)}個の画像要素を発見")
+                
+                downloaded_files = []
+                
+                for i, img_element in enumerate(image_elements[:limit]):
+                    try:
+                        # 画像のsrc属性を取得
+                        src = await img_element.get_attribute('src')
+                        if not src:
+                            continue
+                        
+                        # 相対パスを絶対パスに変換
+                        image_url = urljoin(url, src)
+                        
+                        # ファイル名を生成
+                        parsed_url = urlparse(image_url)
+                        filename = os.path.basename(parsed_url.path)
+                        if not filename or '.' not in filename:
+                            filename = f"image_{i+1}.jpg"
+                        
+                        # ファイルパス
+                        file_path = os.path.join(download_path, filename)
+                        
+                        # 画像をダウンロード
+                        response = requests.get(image_url, stream=True, timeout=10)
+                        if response.status_code == 200:
+                            with open(file_path, 'wb') as f:
+                                for chunk in response.iter_content(chunk_size=8192):
+                                    f.write(chunk)
+                            
+                            downloaded_files.append(file_path)
+                            print(f"✅ ダウンロード完了: {filename}")
+                        else:
+                            print(f"⚠️ ダウンロード失敗: {image_url} (Status: {response.status_code})")
+                            
+                    except Exception as e:
+                        print(f"⚠️ 画像処理エラー: {e}")
+                        continue
+                
+                await browser.close()
+                
+                # 実行履歴保存
+                self.save_execution(
+                    task_name="画像取得",
+                    url=url,
+                    action_type="collect_images",
+                    parameters=json.dumps({
+                        "image_selector": image_selector,
+                        "download_path": download_path,
+                        "limit": limit,
+                        "downloaded_count": len(downloaded_files)
+                    }),
+                    success=True
+                )
+                
+                return downloaded_files, f"✅ {len(downloaded_files)}個の画像を取得しました"
+                
+        except Exception as e:
+            error_msg = f"❌ 画像取得エラー: {str(e)}"
+            
+            self.save_execution(
+                task_name="画像取得",
+                url=url,
+                action_type="collect_images",
+                parameters=json.dumps({
+                    "image_selector": image_selector,
+                    "download_path": download_path,
+                    "limit": limit
+                }),
+                success=False,
+                error_message=str(e)
+            )
+            
+            return [], error_msg
+    
+    async def create_image_gallery(self, image_paths: List[str], output_path: str = None) -> str:
+        """
+        取得した画像から一覧ギャラリーを作成
+        
+        Args:
+            image_paths: 画像ファイルパスのリスト
+            output_path: 出力HTMLファイルパス
+            
+        Returns:
+            生成されたHTMLファイルパス
+        """
+        if not output_path:
+            output_path = "/workspaces/fastapi_django_main_live/docs/image_gallery.html"
+        
+        # HTMLギャラリー生成
+        html_content = """<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📸 RPA画像取得ギャラリー</title>
+    <style>
+        body {{
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }}
+        .container {{
+            max-width: 1200px;
+            margin: 0 auto;
+        }}
+        h1 {{
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }}
+        .gallery {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }}
+        .image-card {{
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }}
+        .image-card:hover {{
+            transform: translateY(-5px);
+        }}
+        .image-card img {{
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }}
+        .image-info {{
+            font-size: 14px;
+            opacity: 0.9;
+        }}
+        .stats {{
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📸 RPA画像取得ギャラリー</h1>
+        <div class="stats">
+            <p>🎯 取得画像数: <strong>{image_count}</strong></p>
+            <p>📅 生成日時: <strong>{timestamp}</strong></p>
+        </div>
+        <div class="gallery">
+            {image_cards}
+        </div>
+    </div>
+</body>
+</html>"""
+        
+        # 画像カード生成
+        image_cards = ""
+        for i, image_path in enumerate(image_paths, 1):
+            import os
+            filename = os.path.basename(image_path)
+            # 相対パスに変換
+            rel_path = os.path.relpath(image_path, os.path.dirname(output_path))
+            
+            image_cards += f"""
+            <div class="image-card">
+                <img src="{rel_path}" alt="取得画像 {i}">
+                <div class="image-info">
+                    <strong>#{i}</strong> - {filename}
+                </div>
+            </div>
+            """
+        
+        # HTMLコンテンツ完成
+        final_html = html_content.format(
+            image_count=len(image_paths),
+            timestamp=datetime.datetime.now().strftime('%Y年%m月%d日 %H:%M:%S'),
+            image_cards=image_cards
+        )
+        
+        # ファイル出力
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(final_html)
+        
+        return output_path
+
     def save_execution(self, task_name: str, url: str, action_type: str, 
                       parameters: str, success: bool, error_message: str = None):
         """実行履歴をデータベースに保存"""
@@ -461,6 +692,79 @@ def create_rpa_interface():
                 outputs=[click_output, click_message]
             )
         
+        with gr.Tab("🖼️ 画像取得"):
+            gr.Markdown("## 🎯 ウェブページから画像収集")
+            
+            def image_collect_wrapper(url, selector, limit, download_path):
+                """画像取得のラッパー関数"""
+                if not url:
+                    return [], "❌ URLを入力してください", ""
+                
+                try:
+                    files, message = asyncio.run(rpa_manager.collect_images_from_page(
+                        url, selector or "img", download_path or None, int(limit)
+                    ))
+                    
+                    if files:
+                        # ギャラリーHTML作成
+                        gallery_path = asyncio.run(rpa_manager.create_image_gallery(files))
+                        gallery_url = f"file://{gallery_path}"
+                        return files, message, f"📖 ギャラリー作成: {gallery_path}"
+                    else:
+                        return [], message, ""
+                        
+                except Exception as e:
+                    return [], f"❌ エラー: {str(e)}", ""
+            
+            with gr.Row():
+                with gr.Column(scale=2):
+                    image_url = gr.Textbox(
+                        label="🌐 URL",
+                        placeholder="https://example.com",
+                        value="https://www.google.com/search?q=cats&tbm=isch"
+                    )
+                with gr.Column(scale=1):
+                    image_limit = gr.Slider(
+                        label="📊 取得数上限",
+                        minimum=1,
+                        maximum=50,
+                        value=5,
+                        step=1
+                    )
+            
+            with gr.Row():
+                image_selector = gr.Textbox(
+                    label="🎯 画像セレクタ",
+                    placeholder="img (デフォルト)",
+                    value="img",
+                    scale=2
+                )
+                download_path = gr.Textbox(
+                    label="📁 ダウンロード先",
+                    placeholder="/workspaces/fastapi_django_main_live/docs/images/collected (デフォルト)",
+                    value="",
+                    scale=2
+                )
+            
+            collect_btn = gr.Button("🖼️ 画像取得開始", variant="primary", size="lg")
+            
+            with gr.Row():
+                with gr.Column():
+                    collected_files = gr.File(
+                        label="📁 取得ファイル一覧",
+                        file_count="multiple",
+                        height=200
+                    )
+                with gr.Column():
+                    collect_message = gr.Textbox(label="📝 実行結果", lines=3)
+                    gallery_info = gr.Textbox(label="📖 ギャラリー情報", lines=2)
+            
+            collect_btn.click(
+                image_collect_wrapper,
+                inputs=[image_url, image_selector, image_limit, download_path],
+                outputs=[collected_files, collect_message, gallery_info]
+            )
+        
         with gr.Tab("📊 実行履歴"):
             gr.Markdown("## 🕒 RPA実行履歴")
             
@@ -479,6 +783,7 @@ def create_rpa_interface():
             ### 🎯 機能概要
             - **📸 スクリーンショット**: ウェブページの画面キャプチャ
             - **🖱️ 画面操作**: 要素のクリック、フォーム入力
+            - **📷 画像取得**: ウェブページからの画像ダウンロード
             - **📊 履歴管理**: 実行履歴の記録・表示
             
             ### 🔧 セレクタ例
@@ -494,6 +799,11 @@ def create_rpa_interface():
             
             2. **ボタンクリック**:
                - セレクタ: `button`, `.btn-primary`, `#submit-btn`
+            
+            3. **画像取得**:
+               - URL: `https://example.com`
+               - 画像セレクタ: `img`
+               - ダウンロード先: `/path/to/download`
             
             ### ⚠️ 注意事項
             - 対象サイトの利用規約を確認してください
