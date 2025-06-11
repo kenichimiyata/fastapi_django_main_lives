@@ -53,6 +53,8 @@ def include_gradio_interfaces():
                     title_mapping = {
                         'contbk_example': '🎯 ContBK ダッシュボード',
                         'contbk_dashboard': '📊 ContBK 統合',
+                        'conversation_history': '💬 会話履歴管理',
+                        'conversation_logger': '📝 会話ログ',
                         'example_gradio_interface': '🔧 サンプル',
                         'hasura': '🗄️ Hasura API',
                         'Chat': '💬 チャット',
