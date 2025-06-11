@@ -1,6 +1,6 @@
 cache_dir: null
 lang: en
-last_model: DeepSeekCoder-33B-Chat
+last_model: Aya-23-8B-Chat
 path_dict:
   Falcon-180B: tiiuae/falcon-180b
   LLaMA3-70B-Chat: meta-llama/Meta-Llama-3-70B-Instruct
