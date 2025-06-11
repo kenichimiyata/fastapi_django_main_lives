@@ -304,8 +304,8 @@ def create_unified_dashboard() -> gr.TabbedInterface:
 
 print("🚀 Creating gradio_interface...")
 # このファイルのメインエクスポート - 美しいタイトル付き
-gradio_interface = create_unified_dashboard()
-print("✅ gradio_interface created successfully")
+# gradio_interface = create_unified_dashboard()  # 無効化：重複を防ぐため
+print("🚫 gradio_interface disabled to prevent duplication")
 
 # 自動検出システム用のメタデータ
 interface_title = "🎯 ContBK ダッシュボード"
@@ -314,6 +314,7 @@ interface_description = "ContBKフォルダーの全インターフェースを�
 # テスト実行用
 if __name__ == "__main__":
     print("🚀 ContBK統合ダッシュボードを起動中...")
+    gradio_interface = create_unified_dashboard()  # テスト実行時のみ
     gradio_interface.launch(
         server_name="0.0.0.0",
         server_port=7864,  # 新しいポート

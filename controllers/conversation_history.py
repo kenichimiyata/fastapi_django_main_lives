@@ -464,7 +464,7 @@ gradio_interface = create_conversation_interface()
 if __name__ == "__main__":
     print("🚀 会話履歴管理システム起動中...")
     gradio_interface.launch(
-        server_port=7870,
+        server_port=7872,  # ポート変更
         share=False,
         debug=True
     )

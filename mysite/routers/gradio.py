@@ -51,11 +51,11 @@ def include_gradio_interfaces():
                     
                     # 特定のモジュールに対する美しいタイトルマッピング
                     title_mapping = {
-                        'contbk_example': '🎯 ContBK ダッシュボード',
-                        'contbk_dashboard': '📊 ContBK 統合',
                         'conversation_history': '💬 会話履歴管理',
                         'conversation_logger': '📝 会話ログ',
-                        'example_gradio_interface': '🔧 サンプル',
+                        # 'contbk_example': '🎯 ContBK ダッシュボード',  # 無効化済み
+                        # 'contbk_dashboard': '📊 ContBK 統合',  # 無効化済み
+                        # 'example_gradio_interface': '🔧 サンプル',  # 無効化済み
                         'hasura': '🗄️ Hasura API',
                         'Chat': '💬 チャット',
                         'OpenInterpreter': '🤖 AI インタープリター',

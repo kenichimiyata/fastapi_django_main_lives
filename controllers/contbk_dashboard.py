@@ -230,11 +230,12 @@ def create_tabbed_interface() -> gr.TabbedInterface:
         )
 
 # メインのgradio_interfaceを作成
-gradio_interface = create_tabbed_interface()
+# gradio_interface = create_tabbed_interface()  # 無効化：重複を防ぐため
 
 # スタンドアロン実行用（テスト用）
 if __name__ == "__main__":
     print("🚀 ContBK ダッシュボードを起動中...")
+    gradio_interface = create_tabbed_interface()  # テスト実行時のみ
     gradio_interface.launch(
         server_name="0.0.0.0",
         server_port=7863,  # 別のポートを使用

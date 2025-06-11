@@ -357,7 +357,7 @@ gradio_interface = create_demo_interface()
 if __name__ == "__main__":
     print("🎯 会話履歴統合デモ起動中...")
     gradio_interface.launch(
-        server_port=7871,
+        server_port=7873,  # ポート変更
         share=False,
         debug=True
     )
