@@ -1,0 +1,12 @@
+<form method="post">
+    {% csrf_token %}
+    <h2>Customer Information</h2>
+    {{ customer_form.as_p }}
+    <h2>Bank Account Information</h2>
+    {{ bank_account_form.as_p }}
+    <h2>Product Information</h2>
+    {{ product_form.as_p }}
+    <h2>Order Information</h2>
+    {{ order_form.as_p }}
+    <button type="submit">Create Order</button>
+</form>

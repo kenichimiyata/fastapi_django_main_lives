@@ -1,0 +1,8 @@
+fastapi
+sqlalchemy
+gradio
+pytesseract
+google-auth
+google-api-python-client
+requests
+uvicorn
