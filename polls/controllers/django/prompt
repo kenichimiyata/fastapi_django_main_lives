@@ -1,3 +1,0 @@
-django app create
-python manage.py startapp polls
-admin register
