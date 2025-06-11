@@ -16,6 +16,7 @@ import json
 import os
 import traceback
 import sqlite3
+import subprocess
 from typing import Optional, Dict, List
 from controllers.conversation_history import ConversationManager
 
@@ -191,6 +192,269 @@ class ConversationLogger:
         except Exception as e:
             print(f"❌ セッションエクスポートエラー: {e}")
             return ""
+    
+    def create_github_issue(self, 
+                           title: str = None,
+                           session_id: str = None,
+                           labels: List[str] = None,
+                           assignee: str = None) -> bool:
+        """
+        GitHub Issueを作成
+        
+        Args:
+            title: Issue のタイトル（未指定の場合は自動生成）
+            session_id: 対象セッションID（未指定の場合は現在のセッション）
+            labels: 付与するラベル
+            assignee: アサイニー
+        
+        Returns:
+            作成成功の可否
+        """
+        try:
+            target_session = session_id or self.current_session_id
+            
+            # 会話履歴を取得
+            conversations = self.conversation_manager.get_conversations(
+                session_id=target_session
+            )
+            
+            if not conversations:
+                print("⚠️ 会話履歴が見つかりません")
+                return False
+            
+            # タイトルを自動生成（未指定の場合）
+            if not title:
+                first_conversation = conversations[-1]  # 最初の会話
+                title = f"開発セッション: {first_conversation.get('user_message', '')[:50]}..."
+            
+            # Issue本文を生成
+            issue_body = self._generate_issue_body(conversations, target_session)
+            
+            # GitHub CLI を使用してIssue作成
+            cmd = [
+                'gh', 'issue', 'create',
+                '--title', title,
+                '--body', issue_body
+            ]
+            
+            # ラベルを追加
+            if labels:
+                for label in labels:
+                    cmd.extend(['--label', label])
+            
+            # アサイニーを追加
+            if assignee:
+                cmd.extend(['--assignee', assignee])
+            
+            # コマンド実行
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd='/workspaces/fastapi_django_main_live')
+            
+            if result.returncode == 0:
+                issue_url = result.stdout.strip()
+                print(f"✅ GitHub Issue作成成功: {issue_url}")
+                
+                # セッションにIssue URLを記録
+                self._update_session_issue_url(target_session, issue_url)
+                
+                return True
+            else:
+                print(f"❌ GitHub Issue作成失敗: {result.stderr}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ GitHub Issue作成エラー: {e}")
+            print(traceback.format_exc())
+            return False
+    
+    def _generate_issue_body(self, conversations: List[Dict], session_id: str) -> str:
+        """Issue本文を生成"""
+        
+        # セッション情報
+        session_info = self.get_session_summary()
+        
+        body_parts = [
+            "# 開発セッション記録",
+            "",
+            "## 📊 セッション情報",
+            f"- **セッションID**: `{session_id[:8]}`",
+            f"- **開始時刻**: {self.session_start_time.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"- **会話数**: {len(conversations)}",
+            f"- **継続時間**: {session_info.get('duration_minutes', 0):.1f}分",
+            "",
+            "## 🗣️ 会話履歴",
+            ""
+        ]
+        
+        # 会話履歴を追加（最新10件まで）
+        recent_conversations = conversations[:10] if len(conversations) > 10 else conversations
+        
+        for i, conv in enumerate(reversed(recent_conversations), 1):
+            body_parts.extend([
+                f"### {i}. {conv.get('timestamp', '')}",
+                "",
+                "**👤 User:**",
+                "```",
+                conv.get('user_message', ''),
+                "```",
+                "",
+                "**🤖 Assistant:**",
+                "```",
+                conv.get('assistant_response', '')[:1000] + ('...' if len(conv.get('assistant_response', '')) > 1000 else ''),
+                "```",
+                ""
+            ])
+            
+            # コンテキスト情報があれば追加
+            if conv.get('context_info'):
+                body_parts.extend([
+                    "**📝 Context:**",
+                    "```",
+                    conv.get('context_info', ''),
+                    "```",
+                    ""
+                ])
+            
+            # 関連ファイルがあれば追加
+            if conv.get('files_involved'):
+                body_parts.extend([
+                    "**📁 Files:**",
+                    f"`{conv.get('files_involved', '')}`",
+                    ""
+                ])
+            
+            # 使用ツールがあれば追加
+            if conv.get('tools_used'):
+                body_parts.extend([
+                    "**🔧 Tools:**",
+                    f"`{conv.get('tools_used', '')}`",
+                    ""
+                ])
+            
+            body_parts.append("---")
+            body_parts.append("")
+        
+        # 要約とタグ
+        all_files = set()
+        all_tools = set()
+        all_tags = set()
+        
+        for conv in conversations:
+            if conv.get('files_involved'):
+                all_files.update(conv.get('files_involved', '').split(', '))
+            if conv.get('tools_used'):
+                all_tools.update(conv.get('tools_used', '').split(', '))
+            if conv.get('tags'):
+                all_tags.update(conv.get('tags', '').split(', '))
+        
+        body_parts.extend([
+            "## 📋 セッション要約",
+            "",
+            "### 関連ファイル",
+            "",
+        ])
+        
+        for file in sorted(all_files):
+            if file.strip():
+                body_parts.append(f"- `{file.strip()}`")
+        
+        body_parts.extend([
+            "",
+            "### 使用ツール",
+            "",
+        ])
+        
+        for tool in sorted(all_tools):
+            if tool.strip():
+                body_parts.append(f"- `{tool.strip()}`")
+        
+        if all_tags:
+            body_parts.extend([
+                "",
+                "### タグ",
+                "",
+            ])
+            
+            for tag in sorted(all_tags):
+                if tag.strip():
+                    body_parts.append(f"- `{tag.strip()}`")
+        
+        body_parts.extend([
+            "",
+            "---",
+            f"*自動生成: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
+        ])
+        
+        return "\n".join(body_parts)
+    
+    def _update_session_issue_url(self, session_id: str, issue_url: str):
+        """セッションにIssue URLを記録"""
+        try:
+            conn = sqlite3.connect(self.conversation_manager.db_path)
+            cursor = conn.cursor()
+            
+            # sessions テーブルにissue_url カラムを追加（存在しない場合）
+            cursor.execute('''
+                ALTER TABLE sessions ADD COLUMN issue_url TEXT
+            ''')
+            
+        except sqlite3.OperationalError:
+            # カラムが既に存在する場合
+            pass
+        
+        try:
+            cursor.execute('''
+                INSERT OR REPLACE INTO sessions (session_id, issue_url)
+                VALUES (?, ?)
+            ''', (session_id, issue_url))
+            
+            conn.commit()
+            conn.close()
+            
+        except Exception as e:
+            print(f"⚠️ Issue URL記録エラー: {e}")
+    
+    def create_issue_for_current_session(self, 
+                                       title: str = None,
+                                       labels: List[str] = None) -> bool:
+        """現在のセッションのGitHub Issueを作成"""
+        default_labels = []  # デフォルトラベルを空に
+        if labels:
+            default_labels.extend(labels)
+        
+        return self.create_github_issue(
+            title=title,
+            session_id=self.current_session_id,
+            labels=default_labels
+        )
+    
+    def create_quick_issue(title: str, 
+                     user_msg: str, 
+                     assistant_msg: str,
+                     labels: List[str] = None):
+        """
+        会話内容から直接GitHub Issueを作成
+        
+        使用例:
+        create_quick_issue(
+            title="ContBK統合システム開発",
+            user_msg="このやりとりをGit Issueへ登録したい",
+            assistant_msg="GitHub Issue作成機能を実装しました",
+            labels=["development", "enhancement"]
+        )
+        """
+        # 一時的に会話を記録
+        conversation_logger.log_conversation(
+            user_message=user_msg,
+            assistant_response=assistant_msg,
+            context_info="GitHub Issue直接作成",
+            tags=["quick-issue"] + (labels or [])
+        )
+        
+        # すぐにIssue作成
+        return conversation_logger.create_issue_for_current_session(
+            title=title,
+            labels=labels or ["development", "conversation-log"]
+        )
 
 # グローバルログインスタンス
 conversation_logger = ConversationLogger()
@@ -222,6 +486,57 @@ def log_this_conversation(user_msg: str, assistant_msg: str,
 def start_new_conversation_session(session_name: str = None):
     """新しい会話セッションを開始"""
     return conversation_logger.start_new_session(session_name)
+
+def create_quick_issue(title: str, 
+                     user_msg: str, 
+                     assistant_msg: str,
+                     labels: List[str] = None):
+    """
+    会話内容から直接GitHub Issueを作成
+    
+    使用例:
+    create_quick_issue(
+        title="ContBK統合システム開発",
+        user_msg="このやりとりをGit Issueへ登録したい",
+        assistant_msg="GitHub Issue作成機能を実装しました",
+        labels=["development", "enhancement"]
+    )
+    """
+    # 一時的に会話を記録
+    conversation_logger.log_conversation(
+        user_message=user_msg,
+        assistant_response=assistant_msg,
+        context_info="GitHub Issue直接作成",
+        tags=["quick-issue"] + (labels or [])
+    )
+    
+    # すぐにIssue作成
+    return conversation_logger.create_issue_for_current_session(
+        title=title,
+        labels=labels or []  # デフォルトラベルを空に
+    )
+
+def create_github_issue_for_session(title: str = None, 
+                                   labels: List[str] = None,
+                                   session_id: str = None):
+    """
+    現在のセッションまたは指定セッションのGitHub Issueを作成
+    
+    使用例:
+    create_github_issue_for_session(
+        title="ContBK統合システム開発セッション",
+        labels=["enhancement", "contbk"]
+    )
+    """
+    return conversation_logger.create_github_issue(
+        title=title,
+        session_id=session_id,
+        labels=labels or ["development", "conversation-log"]
+    )
+
+def create_issue_now(title: str = "開発セッション記録"):
+    """ワンクリックでGitHub Issue作成"""
+    return conversation_logger.create_issue_for_current_session(title=title)
 
 def get_current_session_info():
     """現在のセッション情報を取得"""
@@ -276,16 +591,19 @@ if __name__ == "__main__":
     
     # サンプル会話を記録
     log_this_conversation(
-        user_msg="会話履歴システムのテストです",
-        assistant_msg="会話履歴システムが正常に動作しています！",
-        context="テスト実行",
+        user_msg="GitHub Issue作成機能のテストです",
+        assistant_msg="GitHub Issue作成機能が正常に動作しています！",
+        context="GitHub Issue機能追加",
         files=["controllers/conversation_logger.py"],
-        tools=["create_file"],
-        tags=["テスト", "会話履歴"]
+        tools=["create_github_issue", "gh"],
+        tags=["github", "issue", "automation"]
     )
     
     # セッション情報表示
     session_info = get_current_session_info()
     print(f"📊 セッション情報: {session_info}")
+    
+    # GitHub Issue作成テスト（コメントアウト）
+    # create_issue_now("テスト用GitHub Issue")
     
     print("✅ テスト完了")

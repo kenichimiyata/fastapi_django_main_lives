@@ -19,20 +19,32 @@ import pkgutil
 import traceback
 
 def include_gradio_interfaces():
-    package_dir = "controllers"  # 相対パスでcontrollersディレクトリを指定
     gradio_interfaces = {}  # 辞書型: { interface_name: gradio_interface }
     
-    # `controllers/` 以下の全てのサブディレクトリを探索
+    # 検索対象ディレクトリを指定（ContBKは統合ダッシュボードで表示するため除外）
+    search_dirs = [
+        ("controllers", "controllers"),  # メインのcontrollersディレクトリのみ
+    ]
+    
     package_paths = []
-    for root, dirs, files in os.walk(package_dir):
-        if "__pycache__" in root:  # `__pycache__` を除外
-            continue
-        package_paths.append(root)
+    
+    # 各検索ディレクトリをスキャン
+    for package_dir, module_prefix in search_dirs:
+        if os.path.exists(package_dir):
+            print(f"📂 Scanning directory: {package_dir}")
+            for root, dirs, files in os.walk(package_dir):
+                if "__pycache__" in root:  # `__pycache__` を除外
+                    continue
+                package_paths.append((root, module_prefix))
 
-    for package_path in package_paths:
+    for package_path, module_prefix in package_paths:
         # パッケージの Python モジュールを取得
-        rel_path = os.path.relpath(package_path, package_dir)
-        package_name = "controllers" + (("." + rel_path.replace(os.sep, ".")) if rel_path != "." else "")
+        rel_path = os.path.relpath(package_path, module_prefix.split('.')[0] if '.' in module_prefix else module_prefix)
+        
+        if rel_path == ".":
+            package_name = module_prefix
+        else:
+            package_name = module_prefix + "." + rel_path.replace(os.sep, ".")
 
         for module_info in pkgutil.iter_modules([package_path]):
             sub_module_name = f"{package_name}.{module_info.name}"
@@ -53,6 +65,8 @@ def include_gradio_interfaces():
                     title_mapping = {
                         'conversation_history': '💬 会話履歴管理',
                         'conversation_logger': '📝 会話ログ',
+                        'conversation_demo': '🎯 会話履歴統合デモ',
+                        'contbk_unified_dashboard': '🎯 ContBK統合ダッシュボード',
                         # 'contbk_example': '🎯 ContBK ダッシュボード',  # 無効化済み
                         # 'contbk_dashboard': '📊 ContBK 統合',  # 無効化済み
                         # 'example_gradio_interface': '🔧 サンプル',  # 無効化済み
@@ -60,11 +74,12 @@ def include_gradio_interfaces():
                         'Chat': '💬 チャット',
                         'OpenInterpreter': '🤖 AI インタープリター',
                         'programfromdoc': '📄 ドキュメント生成',
-                        'gradio_interface': '🚀 AI開発',
-                        'lavelo': '💾 プロンプト管理',
-                        'rides': '🚗 データベース',
+                        'gradio_interface': '🚀 AI開発プラットフォーム',
+                        'lavelo': '💾 プロンプト管理システム',
+                        'rides': '🚗 データベース管理',
                         'files': '📁 ファイル管理',
                         'gradio': '🌐 HTML表示',
+                        'rpa_automation': '🤖 RPA自動化システム',
                     }
                     
                     # モジュールにtitle属性があるかチェック

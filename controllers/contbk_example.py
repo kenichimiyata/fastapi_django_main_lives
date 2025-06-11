@@ -304,11 +304,11 @@ def create_unified_dashboard() -> gr.TabbedInterface:
 
 print("🚀 Creating gradio_interface...")
 # このファイルのメインエクスポート - 美しいタイトル付き
-# gradio_interface = create_unified_dashboard()  # 無効化：重複を防ぐため
-print("🚫 gradio_interface disabled to prevent duplication")
+# gradio_interface = create_unified_dashboard()  # 無効化：新しい統合ダッシュボードに移行
+print("🚫 gradio_interface disabled - moved to contbk_unified_dashboard.py")
 
 # 自動検出システム用のメタデータ
-interface_title = "🎯 ContBK ダッシュボード"
+interface_title = "🎯 ContBK ダッシュボード (旧版)"
 interface_description = "ContBKフォルダーの全インターフェースを統合表示"
 
 # テスト実行用
