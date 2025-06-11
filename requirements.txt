@@ -1,54 +1,49 @@
--i https://pypi.org/simple
+# Core dependencies
+fastapi==0.110.0
+uvicorn==0.27.1
 gradio==4.31.5
+starlette==0.36.3
+pydantic==2.6.2
+pydantic-core==2.16.3
+
+# Django
+django==5.0.4
+asgiref==3.8.1
+sqlparse==0.5.0
+whitenoise==6.6.0
+
+# AI & ML
 open-interpreter
-jinja2
-annotated-types==0.6.0; python_version >= '3.8'
-anyio==4.3.0; python_version >= '3.8'
-async-timeout==4.0.3; python_version >= '3.7'
-certifi==2024.2.2; python_version >= '3.6'
-click==8.1.7; python_version >= '3.7'
-distro==1.9.0; python_version >= '3.6'
-fastapi==0.110.0; python_version >= '3.8'
-groq==0.4.1; python_version >= '3.7'
-h11==0.14.0; python_version >= '3.7'
-httpcore==1.0.4; python_version >= '3.8'
-httpx==0.27.0; python_version >= '3.8'
-idna==3.6; python_version >= '3.5'
-pydantic==2.6.2; python_version >= '3.8'
-pydantic-core==2.16.3; python_version >= '3.8'
-sniffio==1.3.1; python_version >= '3.7'
-sse-starlette==2.0.0; python_version >= '3.8'
-starlette==0.36.3; python_version >= '3.8'
-typing-extensions==4.10.0; python_version >= '3.8'
-uvicorn==0.27.1; python_version >= '3.8'
-duckdb
-annotated-types==0.6.0 ; python_version >= "3.10" and python_version < "4.0"
-anyio==4.3.0 ; python_version >= "3.10" and python_version < "4.0"
-asgiref==3.8.1 ; python_version >= "3.10" and python_version < "4.0"
-click==8.1.7 ; python_version >= "3.10" and python_version < "4.0"
-colorama==0.4.6 ; python_version >= "3.10" and python_version < "4.0" and platform_system == "Windows"
-django==5.0.4 ; python_version >= "3.10" and python_version < "4.0"
-exceptiongroup==1.2.0 ; python_version >= "3.10" and python_version < "3.11"
-h11==0.14.0 ; python_version >= "3.10" and python_version < "4.0"
-idna ; python_version >= "3.10" and python_version < "4.0"
-#psycopg2==2.9.9 ; python_version >= "3.10" and python_version < "4.0"
-pydantic-core==2.16.3 ; python_version >= "3.10" and python_version < "4.0"
-#pydantic==2.6.4 ; python_version >= "3.10" and python_version < "4.0"
-sniffio==1.3.1 ; python_version >= "3.10" and python_version < "4.0"
-sqlparse==0.5.0 ; python_version >= "3.10" and python_version < "4.0"
-starlette ; python_version >= "3.10" and python_version < "4.0"
-typing-extensions ; python_version >= "3.10" and python_version < "4.0"
-tzdata==2024.1 ; python_version >= "3.10" and python_version < "4.0" and sys_platform == "win32"
-uvloop==0.19.0 ; python_version >= "3.10" and python_version < "4.0" and sys_platform != "win32"
-whitenoise==6.6.0 ; python_version >= "3.10" and python_version < "4.0"
+groq==0.4.1
 llamafactory
-#gradio==4.31.5
-aiofiles
-diffusers
-psycopg2-binary
 accelerate
-#git+https://github.com/huggingface/diffusers@9dc8444
-#gradio==3.23.0
+diffusers
+
+# Database
+duckdb
+psycopg2-binary
+
+# Utilities
+python-dotenv
+jinja2
+aiofiles
+click==8.1.7
+annotated-types==0.6.0
+anyio==4.3.0
+async-timeout==4.0.3
+certifi==2024.2.2
+distro==1.9.0
+h11==0.14.0
+httpcore==1.0.4
+httpx==0.27.0
+idna==3.6
+sniffio==1.3.1
+sse-starlette==2.0.0
+typing-extensions==4.10.0
+colorama==0.4.6
+exceptiongroup==1.2.0
+tzdata==2024.1
+uvloop==0.19.0
 huggingface-hub
 imageio[ffmpeg]
 torch
