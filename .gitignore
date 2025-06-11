@@ -217,3 +217,4 @@ temp/
 # 一時的にLFS問題のあるファイルを除外
 docs/images/collected/test_2/118224532-3842c400-b438-11eb-923d-a5f66fa6785a.png
 docs/images/screenshots/contbk_dashboard.png
+staticfiles/haru_greeter_pro_jp/
