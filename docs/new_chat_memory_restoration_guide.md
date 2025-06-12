@@ -35,6 +35,10 @@ miyatakenさん、私たちのFastAPI Django Main Liveプロジェクトの記�
 - 🖼️ **RPA画像取得機能**: Playwright画像収集自動化 (Issue #5解決)
 - 🤖 **OpenInterpreter統合**: AI搭載コード実行環境
 - 🔧 **VS Code デバッグ環境**: 完全開発環境
+- 🎮 **VNC GUI自動化システム**: Docker + noVNC + xdotool統合
+- 🧠 **AI長期記憶システム**: SQLite-based persistent memory
+- 🌐 **GitHub Wikiポートフォリオ**: 転職活動用技術展示
+- 🎭 **AI-Human哲学的コラボ**: 詩・論文・知的対話
 
 ### 技術スタック
 - **FastAPI + Django + Gradio**: Webアプリ基盤
@@ -42,6 +46,9 @@ miyatakenさん、私たちのFastAPI Django Main Liveプロジェクトの記�
 - **SQLite**: データベース (chat_history.db, rpa_history.db等)
 - **GitHub CLI**: Issue自動作成
 - **OpenInterpreter + Groq API**: AI機能
+- **Docker + noVNC**: GUI自動化環境
+- **xdotool + pyautogui**: VNC操作自動化
+- **ImageMagick + scrot**: スクリーンショット・画像処理
 
 ### 開発哲学
 - **自然言語での要求**: 「○○機能を追加して」→即座実装

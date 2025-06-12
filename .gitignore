@@ -214,6 +214,19 @@ local_settings.py
 *.log
 logs/
 temp/
+
+# 🔒 プライベート・恥ずかしいファイル (会社にバレたらヤバイ系)
+*poem*.py
+*miracle*.py
+*embarrassing*.py
+*爆笑*.md
+*大喜利*.md
+*完全敗北*.md
+*最も高度なギャグ*.md
+*史上初AI*.md
+*30年の技術探求論文*.md
+private_ai_moments/
+
 # 一時的にLFS問題のあるファイルを除外
 docs/images/collected/test_2/118224532-3842c400-b438-11eb-923d-a5f66fa6785a.png
 docs/images/screenshots/contbk_dashboard.png
