@@ -7,7 +7,7 @@ COLOR_CYAN=\033[1;36m
 COLOR_GREEN=\033[1;32m
 
 # Defines the targets help, install, dev-install, and run as phony targets.
-.PHONY: help install run dev debug app server test clean requirements
+.PHONY: help install run dev debug app server test clean requirements ci-test ci-quick ci-full
 
 #sets the default goal to help when no target is specified on the command line.
 .DEFAULT_GOAL := help
@@ -28,6 +28,11 @@ help:
 	@echo "  dev            	Run the application in development mode with hot reload"
 	@echo "  debug          	Run the application in debug mode (no reload)"
 	@echo "  server         	Run the ASGI server directly with uvicorn"
+	@echo "  ci-test        	Run CI/CD automated tests"
+	@echo "  ci-quick       	Run quick CI test (no GitHub Issue)"
+	@echo "  ci-full        	Run full CI pipeline with GitHub Issue"
+	@echo "  ci-comprehensive	Run comprehensive controller tests"
+	@echo "  ci-real-api      	Run real Gradio API tests"
 	@echo "  test           	Run all tests"
 	@echo "  requirements   	Install Python requirements from requirements.txt"
 	@echo "  clean          	Clean up temporary files and caches"
@@ -138,6 +143,36 @@ docker-down:
 	@echo -e "$(COLOR_CYAN)Stopping Docker containers...$(COLOR_RESET)"
 	docker-compose down
 
-docker-logs:
-	@echo -e "$(COLOR_CYAN)Showing Docker logs...$(COLOR_RESET)"
-	docker-compose logs -f
+# CI/CD commands
+ci-test:
+	@echo -e "$(COLOR_CYAN)Running CI/CD automated tests...$(COLOR_RESET)"
+	chmod +x quick_ci_test.sh
+	./quick_ci_test.sh
+
+ci-quick:
+	@echo -e "$(COLOR_CYAN)Running quick CI test (no GitHub Issue)...$(COLOR_RESET)"
+	python3 run_complete_ci_pipeline.py --no-github-issue
+
+ci-full:
+	@echo -e "$(COLOR_CYAN)Running full CI pipeline with GitHub Issue...$(COLOR_RESET)"
+	python3 run_complete_ci_pipeline.py
+
+ci-verbose:
+	@echo -e "$(COLOR_CYAN)Running CI pipeline with verbose output...$(COLOR_RESET)"
+	python3 run_complete_ci_pipeline.py --verbose
+
+ci-comprehensive:
+	@echo -e "$(COLOR_CYAN)Running comprehensive controller tests...$(COLOR_RESET)"
+	python3 comprehensive_controller_test.py
+
+ci-comprehensive-issue:
+	@echo -e "$(COLOR_CYAN)Running comprehensive tests with GitHub Issue...$(COLOR_RESET)"
+	python3 run_complete_ci_pipeline.py --comprehensive
+
+ci-real-api:
+	@echo -e "$(COLOR_CYAN)Running real Gradio API tests...$(COLOR_RESET)"
+	python3 real_gradio_api_tester.py
+
+ci-all:
+	@echo -e "$(COLOR_CYAN)Running all tests (comprehensive + real API + GitHub Issues)...$(COLOR_RESET)"
+	python3 run_complete_ci_pipeline.py
