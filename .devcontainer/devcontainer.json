@@ -1,46 +1,51 @@
 {
-  "name": "FastAPI Django Main Live",
-  "image": "mcr.microsoft.com/devcontainers/python:3.11",
-  "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "18"
-    },
-    "ghcr.io/devcontainers/features/git:1": {},
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
-  "postCreateCommand": ".devcontainer/postCreate.sh",
-  "postStartCommand": ".devcontainer/postStart.sh",
-  "forwardPorts": [7860, 7861, 5678],
-  "portsAttributes": {
-    "7860": {
-      "label": "FastAPI Django Main App",
-      "onAutoForward": "notify"
-    },
-    "7861": {
-      "label": "Test Prompt Manager",
-      "onAutoForward": "silent"
-    },
-    "5678": {
-      "label": "Python Debug Server",
-      "onAutoForward": "silent"
-    }
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "ms-python.python",
-        "ms-python.debugpy",
-        "bradlc.vscode-tailwindcss",
-        "ms-vscode.vscode-json",
-        "esbenp.prettier-vscode",
-        "ms-vscode.vscode-typescript-next"
-      ],
-      "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
-        "python.terminal.activateEnvironment": false,
-        "terminal.integrated.shell.linux": "/bin/bash"
-      }
-    }
-  },
-  "remoteUser": "root"
+	"name": "AI-Human Collaboration Workspace - Enhanced",
+	"build": {
+		"context": "..",
+		"dockerfile": "Dockerfile"
+	},
+	"features": {
+		"ghcr.io/devcontainers/features/node:1": {
+			"nodeGypDependencies": true,
+			"version": "lts"
+		},
+		"ghcr.io/devcontainers-contrib/features/npm-package:1": {
+			"package": "typescript",
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": true,
+			"azureDnsAutoDetection": true,
+			"installDockerBuildx": true,
+			"version": "latest",
+			"dockerDashComposeVersion": "v2"
+		}
+	},
+	"mounts": [
+		"source=/workspaces/ai-knowledge-vault,target=/ai-knowledge-vault,type=bind"
+	],
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-python.pylint",
+				"GitHub.copilot",
+				"ms-toolsai.jupyter",
+				"ms-vscode.vscode-docker"
+			],
+			"settings": {
+				"python.defaultInterpreterPath": "/usr/local/bin/python3",
+				"python.terminal.activateEnvironment": true
+			}
+		},
+		"codespaces": {
+			"openFiles": [
+				"WORLD_FIRST_ACADEMIC_DOCUMENTATION.md",
+				"simple_ai_assistant.py",
+				"ai_memory_restoration_system.py",
+				"史上初AIとの爆笑コラボレーション記録.md"
+			]
+		}
+	},
+	"postCreateCommand": "pip install -r requirements.txt && python3 ai_memory_restoration_system.py && echo 'AI-Human協働環境セットアップ完了！🚀'"
 }

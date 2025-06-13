@@ -70,7 +70,7 @@ def get_approval_queue() -> List[Dict]:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT id, title, content, source, priority, status, github_issue_url, created_at, approved_at
+        SELECT id, issue_title, issue_body, requester, priority, approval_status, github_repo, created_at, approved_at
         FROM approval_queue 
         ORDER BY priority ASC, created_at ASC
     ''')
@@ -100,7 +100,7 @@ def add_to_approval_queue(title: str, content: str, source: str = "manual", prio
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute(
-        'INSERT INTO approval_queue (title, content, source, priority) VALUES (?, ?, ?, ?)',
+        'INSERT INTO approval_queue (issue_title, issue_body, requester, priority) VALUES (?, ?, ?, ?)',
         (title, content, source, priority)
     )
     conn.commit()
@@ -114,7 +114,7 @@ def approve_request(request_id: int) -> str:
     cursor = conn.cursor()
     
     # リクエスト情報取得
-    cursor.execute('SELECT title, content FROM approval_queue WHERE id = ?', (request_id,))
+    cursor.execute('SELECT issue_title, issue_body FROM approval_queue WHERE id = ?', (request_id,))
     request = cursor.fetchone()
     
     if not request:
@@ -125,7 +125,7 @@ def approve_request(request_id: int) -> str:
     
     # ステータス更新
     cursor.execute(
-        'UPDATE approval_queue SET status = ?, approved_at = ? WHERE id = ?',
+        'UPDATE approval_queue SET approval_status = ?, approved_at = ? WHERE id = ?',
         ('approved', datetime.now().isoformat(), request_id)
     )
     
@@ -152,7 +152,7 @@ def reject_request(request_id: int, reason: str = "") -> str:
     cursor = conn.cursor()
     
     # リクエスト情報取得
-    cursor.execute('SELECT title FROM approval_queue WHERE id = ?', (request_id,))
+    cursor.execute('SELECT issue_title FROM approval_queue WHERE id = ?', (request_id,))
     request = cursor.fetchone()
     
     if not request:
@@ -162,7 +162,7 @@ def reject_request(request_id: int, reason: str = "") -> str:
     title = request[0]
     
     cursor.execute(
-        'UPDATE approval_queue SET status = ? WHERE id = ?',
+        'UPDATE approval_queue SET approval_status = ? WHERE id = ?',
         ('rejected', request_id)
     )
     
@@ -182,9 +182,9 @@ def get_execution_logs() -> List[Dict]:
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
-        SELECT id, title, status, result_url, execution_time, created_at, details, github_repo_url
+        SELECT id, approval_id, status, github_repo_url, execution_start, execution_end, result_summary, error_message
         FROM execution_log 
-        ORDER BY created_at DESC 
+        ORDER BY execution_start DESC 
         LIMIT 50
     ''')
     logs = cursor.fetchall()
@@ -193,13 +193,15 @@ def get_execution_logs() -> List[Dict]:
     return [
         {
             'id': l[0],
-            'title': l[1],
-            'status': l[2],
+            'title': f'実行ログID: {l[0]} (承認ID: {l[1]})',
+            'status': l[2] or 'unknown',
             'result_url': l[3] or '',
-            'execution_time': l[4] or 0,
-            'created_at': l[5],
+            'execution_time': 0 if not l[4] or not l[5] else (
+                (datetime.fromisoformat(l[5]) - datetime.fromisoformat(l[4])).total_seconds()
+            ),
+            'created_at': l[4] or 'Unknown',
             'details': l[6] or '',
-            'github_repo_url': l[7] or ''
+            'github_repo_url': l[3] or ''
         }
         for l in logs
     ]
@@ -339,7 +341,7 @@ def create_gradio_interface():
                         q['priority'], 
                         q['status'],
                         q['created_at'][:16]
-                    ] for q in queue if q['status'] == 'pending']
+                    ] for q in queue if q['status'] == 'pending_review']
                 
                 def submit_request_wrapper(title, content, priority):
                     result = add_to_approval_queue(title, content, "manual", int(priority))
