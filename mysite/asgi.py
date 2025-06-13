@@ -38,6 +38,10 @@ app.add_middleware(
 # Gradioインターフェースの設定
 gradio_interfaces = setup_gradio_interfaces()
 
+# Laravel風ルーティング統合
+from routes.laravel_routes import register_laravel_routes
+register_laravel_routes(app)
+
 ## Webhookルートの設定
 include_routers(app)
 setup_webhook_routes(app)
@@ -45,17 +49,21 @@ setup_webhook_routes(app)
 # データベースルートの設定
 setup_database_routes(app)
 
-
-
-# Gradioアプリのマウント
-app.mount("/templates", StaticFiles(directory="templates"), name="templates")
+# テンプレートディレクトリの条件付きマウント
+import os
+templates_dir = "resources/views"  # Laravel構造に合わせて resources/views を使用
+if os.path.exists(templates_dir):
+    app.mount("/templates", StaticFiles(directory=templates_dir), name="templates")
+    print(f"✅ テンプレートディレクトリを {templates_dir} からマウントしました")
+else:
+    print(f"⚠️  警告: {templates_dir} ディレクトリが存在しません")
 
 # テンプレートファイルが格納されているディレクトリを指定
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=templates_dir if os.path.exists(templates_dir) else ".")
 
 @app.get("/tests")
 def get_some_page(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("welcome.html", {"request": request})
 
 
 app = gr.mount_gradio_app(app, gradio_interfaces, "/")

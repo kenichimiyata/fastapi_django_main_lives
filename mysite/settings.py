@@ -28,14 +28,16 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://kenken999-fastapi-django-main-live.hf.space"
+    "https://kenken999-fastapi-django-main-live.hf.space",
+    "https://*.app.github.dev",  # GitHub Codespaces対応
+    "https://*.github.dev",      # GitHub Codespaces対応
 ]
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    "polls.apps.PollsConfig",
+    "polls.apps.PollsConfig",  # Pollsアプリ (Django + FastAPI統合)
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -128,8 +130,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/dev/howto/static-files/
 
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
-# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATIC_ROOT = BASE_DIR / "public" / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# GitHub Codespaces対応: パスの正規化
+USE_THOUSAND_SEPARATOR = True
 
 # if True, run `./manage.py collectstatic --noinput` before
 # and the STATICFILES_STORAGE above will be unnecessary

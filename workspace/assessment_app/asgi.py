@@ -1,1 +1,1 @@
-from channels.asgi import路 route_class
+# FIXED: from channels.asgi import路 route_class

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import gradio as gr
 import os
 import shutil
@@ -79,7 +80,7 @@ if __name__ == "__main__":
         setup_debug_server()
         
         if is_debug:
-            print("🐛 デバッグモード: リロードを無効化してブレークポイントを有効にします")
+            print("� デバッグモード: リロードを無効化してブレークポイントを有効にします")
             # デバッグモード: reloadを無効にしてブレークポイントを使用可能に
             uvicorn.run(
                 "mysite.asgi:app", 

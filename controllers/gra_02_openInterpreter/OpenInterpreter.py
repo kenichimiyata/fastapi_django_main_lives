@@ -8,6 +8,7 @@ from datetime import datetime
 import base64
 from PIL import Image
 from io import BytesIO
+from config.database import get_db_path
 
 # Try to import open-interpreter, but handle if it's not available
 try:
@@ -143,7 +144,7 @@ def format_response(chunk, full_response):
     return full_response
 
 # SQLiteの設定
-db_name = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "chat_history.db")
+db_name = get_db_path("chat_history.db")
 
 def initialize_db():
     # Create database directory if it doesn't exist

@@ -134,115 +134,197 @@ def include_gradio_interfaces():
 
 
 def categorize_interfaces(interfaces, names):
-    """インターフェースをカテゴリ別に分類"""
+    """インターフェースをユーザーフレンドリーなカテゴリ別に分類"""
     categories = {
-        "🚀 スタートガイド": [],
-        "💬 チャット・会話": [],
-        "🤖 AI・自動化": [],
-        "📄 プロンプト・文書": [],
-        "📊 管理・ダッシュボード": [],
-        "🔧 開発・システム": [],
-        "📁 データ・ファイル": [],
-        "🌐 その他・連携": []
+        "スタート": [],             # 初心者ガイド・チュートリアル
+        "チャット": [],             # 会話・質問・対話
+        "AI作成": [],              # プログラム・コード生成
+        "文書作成": [],             # ドキュメント・プロンプト
+        "管理": [],                # システム・データ管理
+        "開発": [],               # 開発ツール・テスト
+        "その他": []              # その他の機能
     }
     
-    # カテゴリマッピング
+    # シンプルなカテゴリマッピング
     category_mapping = {
-        "🚀 初心者ガイド": "🚀 スタートガイド",
-        "💬 会話履歴管理": "💬 チャット・会話",
-        "💬 AIチャット": "💬 チャット・会話",
-        "🎯 会話履歴統合デモ": "💬 チャット・会話",
-        "🤖 AI インタープリター": "🤖 AI・自動化",
-        "🤖 Open Interpreter": "🤖 AI・自動化",
-        "🤖 RPA自動化システム": "🤖 AI・自動化",
-        "🤖 GitHub ISSUE自動生成システム": "🤖 AI・自動化",
-        "🚀 GitHub ISSUE自動化": "🤖 AI・自動化",
-        "📄 ドキュメント生成": "📄 プロンプト・文書",
-        "💾 プロンプト管理システム": "📄 プロンプト・文書",
-        "📄 プログラム生成AI": "📄 プロンプト・文書",
-        "🚀 統合管理ダッシュボード": "📊 管理・ダッシュボード",
-        "🎯 統合承認システム": "📊 管理・ダッシュボード",
-        "🎯 ContBK統合ダッシュボード": "📊 管理・ダッシュボード",
-        "🚀 Dify環境管理": "📊 管理・ダッシュボード",
-        "🔧 UI検証・システム診断": "🔧 開発・システム",
-        "✨ Memory Restore": "🔧 開発・システム",
-        "✨ Memory Restore New": "🔧 開発・システム",
-        "📁 ファイル管理": "📁 データ・ファイル",
-        "🚗 データベース管理": "📁 データ・ファイル",
-        "🌐 HTML表示": "🌐 その他・連携",
-        "🐙 GitHub Issue Creator": "🌐 その他・連携",
-        "🌤️ 天気予報": "🌐 その他・連携",
-        "🖼️ 画像からUI生成": "🌐 その他・連携",
-        "🎨 フロントエンド生成": "🌐 その他・連携"
+        # スタート - 初心者向け・ガイド
+        "初心者ガイド": "スタート",
+        "beginner_guide_system": "スタート",
+        "ガイド": "スタート",
+        "tutorial": "スタート",
+        "guide": "スタート",
+        
+        # チャット - 会話・対話
+        "会話": "チャット",
+        "chat": "チャット",
+        "conversation": "チャット",
+        "話": "チャット",
+        
+        # AI作成 - プログラム生成・自動化
+        "AI": "AI作成",
+        "インタープリター": "AI作成",
+        "interpreter": "AI作成",
+        "RPA": "AI作成",
+        "自動化": "AI作成",
+        "automation": "AI作成",
+        "generate": "AI作成",
+        "program": "AI作成",
+        "github": "AI作成",
+        "issue": "AI作成",
+        
+        # 文書作成 - ドキュメント・プロンプト
+        "ドキュメント": "文書作成",
+        "document": "文書作成",
+        "プロンプト": "文書作成",
+        "prompt": "文書作成",
+        "記録": "文書作成",
+        
+        # 管理 - システム・データ管理  
+        "ダッシュボード": "管理",
+        "dashboard": "管理",
+        "統合": "管理",
+        "管理": "管理",
+        "承認": "管理",
+        "dify": "管理",
+        
+        # 開発 - 開発・テスト
+        "検証": "開発",
+        "診断": "開発",
+        "debug": "開発",
+        "test": "開発",
+        "memory": "開発",
+        "restore": "開発",
+        
+        # その他 - デフォルト
+        "file": "その他",
+        "database": "その他",
+        "データ": "その他",
+        "api": "その他",
+        "html": "その他",
+        "webhook": "その他"
     }
     
-    # インターフェースを分類
+    # インターフェースを分類 - より柔軟なマッピング
     for interface, name in zip(interfaces, names):
-        category = category_mapping.get(name, "🌐 その他・連携")
+        # 完全一致を優先
+        category = None
+        
+        # 部分一致で検索
+        name_lower = name.lower()
+        for key, cat in category_mapping.items():
+            if key.lower() in name_lower:
+                category = cat
+                break
+        
+        # それでもマッチしない場合はデフォルト
+        if not category:
+            category = "その他"
+            
         categories[category].append((interface, name))
     
     return categories
 
-def create_hierarchical_interface(categories):
-    """階層化されたインターフェースを作成"""
+def create_user_friendly_interface(categories):
+    """ユーザーフレンドリーな階層化インターフェースを作成"""
     
-    # まず、カテゴリごとに有効なインターフェースを収集
-    valid_category_interfaces = []
-    valid_category_names = []
+    # 優先順位付きカテゴリ（よく使われる順）
+    priority_categories = [
+        "スタート",
+        "チャット", 
+        "AI作成",
+        "文書作成",
+        "管理",
+        "開発",
+        "その他"
+    ]
     
-    for category_name, category_interfaces in categories.items():
+    valid_tabs = []
+    
+    for category_name in priority_categories:
+        category_interfaces = categories.get(category_name, [])
+        
         if not category_interfaces:  # 空のカテゴリはスキップ
             continue
         
         try:
             if len(category_interfaces) == 1:
-                # 1つの場合はそのまま使用
+                # 1つだけの場合
                 interface, name = category_interfaces[0]
-                valid_category_interfaces.append(interface)
-                valid_category_names.append(f"{category_name}")
+                valid_tabs.append((interface, category_name, name))
             else:
-                # 複数の場合はサブタブを作成
+                # 複数の場合はサブタブで整理
                 sub_interfaces = [item[0] for item in category_interfaces]
                 sub_names = [item[1] for item in category_interfaces]
                 
-                # サブタブを作成
-                sub_tabs = gr.TabbedInterface(sub_interfaces, sub_names)
-                valid_category_interfaces.append(sub_tabs)
-                valid_category_names.append(f"{category_name}")
+                # サブタブのタイトルを短縮
+                short_names = []
+                for name in sub_names:
+                    # 絵文字を除去して短縮
+                    clean_name = ''.join(c for c in name if not c.startswith('🎯🚀💬🤖📄📝📊🔧💾📁🌐🐙🖼️🎨✨'))
+                    short_name = clean_name.strip()[:15] + "..." if len(clean_name) > 15 else clean_name.strip()
+                    short_names.append(short_name or name[:10])
+                
+                sub_tabs = gr.TabbedInterface(sub_interfaces, short_names)
+                valid_tabs.append((sub_tabs, category_name, f"{len(category_interfaces)}個の機能"))
                 
         except Exception as e:
             print(f"カテゴリ {category_name} の処理でエラー: {e}")
             continue
     
-    # メインのタブ付きインターフェースを作成
-    if valid_category_interfaces:
+    # メインタブインターフェースを作成
+    if valid_tabs:
         try:
+            # タブ名を短縮（スマホでも見やすく）
+            main_interfaces = [tab[0] for tab in valid_tabs]
+            main_names = [tab[1] for tab in valid_tabs]
+            
             main_interface = gr.TabbedInterface(
-                valid_category_interfaces, 
-                valid_category_names,
-                title="🚀 AI-Human協働開発システム"
+                main_interfaces, 
+                main_names,
+                title="🚀 AI開発システム - 簡単操作で高速開発"
             )
             return main_interface
+            
         except Exception as e:
             print(f"メインインターフェース作成エラー: {e}")
-            # フォールバック: シンプルなBlocks形式
-            with gr.Blocks(title="🚀 AI-Human協働開発システム") as fallback_interface:
-                gr.Markdown("# 🚀 AI-Human協働開発システム")
-                gr.Markdown("**階層化インターフェースの作成に失敗しました。シンプル表示モードで動作しています。**")
-                
-                for i, (interface, name) in enumerate(zip(valid_category_interfaces, valid_category_names)):
-                    with gr.Tab(name):
-                        try:
-                            interface.render()
-                        except:
-                            gr.Markdown(f"**{name}** の読み込みに失敗しました。")
-            return fallback_interface
+            # フォールバック処理
+            return create_fallback_interface(valid_tabs)
     else:
-        # 有効なインターフェースがない場合
-        with gr.Blocks(title="🚀 AI-Human協働開発システム") as empty_interface:
-            gr.Markdown("# 🚀 システムが起動中です...")
-            gr.Markdown("利用可能なインターフェースがありません。")
-        return empty_interface
+        return create_empty_interface()
+
+def create_fallback_interface(valid_tabs):
+    """フォールバック用のシンプルインターフェース"""
+    with gr.Blocks(title="🚀 AI開発システム") as fallback:
+        gr.Markdown("# 🚀 AI-Human協働開発システム")
+        gr.Markdown("### 直感的な操作で、24時間での高速開発を実現")
+        
+        # 重要なタブを優先表示
+        important_tabs = valid_tabs[:6]  # 最初の6個まで
+        
+        for i, (interface, category, description) in enumerate(important_tabs):
+            with gr.Tab(category):
+                gr.Markdown(f"**{description}**")
+                try:
+                    if hasattr(interface, 'render'):
+                        interface.render()
+                    else:
+                        # インターフェースオブジェクトを直接配置
+                        interface
+                except Exception as e:
+                    gr.Markdown(f"⚠️ 読み込みエラー: {str(e)}")
+                    
+        if len(valid_tabs) > 6:
+            gr.Markdown(f"**他にも {len(valid_tabs) - 6} 個の機能があります**")
+            
+    return fallback
+
+def create_empty_interface():
+    """空のインターフェース"""
+    with gr.Blocks(title="🚀 AI開発システム") as empty:
+        gr.Markdown("# 🚀 システム起動中...")
+        gr.Markdown("### 機能を読み込んでいます。しばらくお待ちください。")
+        gr.Markdown("問題が続く場合は、ページを再読み込みしてください。")
+    return empty
 
 def setup_gradio_interfaces():
     """階層化されたGradioインターフェースを設定 - シンプル版"""
@@ -267,7 +349,7 @@ def setup_gradio_interfaces():
         main_names = []
         
         for interface, name in zip(gradio_interfaces, gradio_names):
-            if "初心者" in name or "ガイド" in name or "スタート" in name:
+            if "初心者" in name or "ガイド" in name or "スタート" in name or "guide" in name.lower():
                 startup_interfaces.append(interface)
                 startup_names.append(name)
             else:
@@ -283,7 +365,7 @@ def setup_gradio_interfaces():
             
             # スタートガイド
             if startup_interfaces:
-                with gr.Tab("🚀 スタートガイド"):
+                with gr.Tab("🚀 はじめる"):
                     gr.Markdown("### 初心者向けガイドと使い方")
                     if len(startup_interfaces) == 1:
                         startup_interfaces[0].render()
@@ -295,7 +377,7 @@ def setup_gradio_interfaces():
             display_names = main_names[:10]
             
             if display_interfaces:
-                with gr.Tab("🛠️ システム機能"):
+                with gr.Tab("🛠️ すべての機能"):
                     gr.Markdown(f"### システムの主要機能 ({len(display_interfaces)}個)")
                     if len(display_interfaces) == 1:
                         display_interfaces[0].render()
@@ -306,7 +388,7 @@ def setup_gradio_interfaces():
             if len(main_interfaces) > 10:
                 remaining_interfaces = main_interfaces[10:]
                 remaining_names = main_names[10:]
-                with gr.Tab("� 追加機能"):
+                with gr.Tab("➕ その他の機能"):
                     gr.Markdown(f"### その他の機能 ({len(remaining_interfaces)}個)")
                     if len(remaining_interfaces) == 1:
                         remaining_interfaces[0].render()

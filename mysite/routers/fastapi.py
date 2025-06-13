@@ -73,8 +73,9 @@ def get_user_profile(user_id, access_token):
 
 #from routers.webhooks import router
 def setup_webhook_routes(app: FastAPI):
-    from polls.routers import register_routers
-
-    register_routers(app) 
+    # Laravel構造のPollsルーターを使用
+    from routes.polls import register_polls_routers
+    register_polls_routers(app)
+    
     from routers.webhook import router
     app.include_router(router)
