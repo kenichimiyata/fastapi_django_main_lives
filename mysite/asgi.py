@@ -66,7 +66,19 @@ def get_some_page(request: Request):
     return templates.TemplateResponse("welcome.html", {"request": request})
 
 
-app = gr.mount_gradio_app(app, gradio_interfaces, "/")
+# Gradioインターフェースを FastAPI にマウント
+try:
+    app = gr.mount_gradio_app(app, gradio_interfaces, path="/gradio")
+    print("✅ Gradio interface mounted at /gradio")
+except Exception as e:
+    print(f"⚠️ Gradio mounting failed: {e}")
+    # 代替方法: 手動でGradioをマウント
+    from fastapi import FastAPI
+    import gradio as gr
+    
+    # GradioインターフェースをASGIアプリとして取得
+    gradio_asgi = gr.routes.App.create_app(gradio_interfaces)
+    app.mount("/gradio", gradio_asgi)
 
 
 
