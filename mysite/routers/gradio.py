@@ -63,6 +63,7 @@ def include_gradio_interfaces():
                     
                     # 特定のモジュールに対する美しいタイトルマッピング
                     title_mapping = {
+                        'beginner_guide_system': '🚀 初心者ガイド',
                         'conversation_history': '💬 会話履歴管理',
                         'conversation_logger': '📝 会話ログ',
                         'conversation_demo': '🎯 会話履歴統合デモ',
@@ -132,46 +133,214 @@ def include_gradio_interfaces():
     return list(gradio_interfaces.values()), list(gradio_interfaces.keys())
 
 
-def setup_gradio_interfaces():
-    ##
-    #from routers.gra_06_video.video import gradio_interface as video
-    default_interfaces = []#,demo]
-    default_names = ["CreateTASK","Chat","OpenInterpreter","DataBase","CreateFromDOC","HTML","FILES"]#"demo"]
+def categorize_interfaces(interfaces, names):
+    """インターフェースをカテゴリ別に分類"""
+    categories = {
+        "🚀 スタートガイド": [],
+        "💬 チャット・会話": [],
+        "🤖 AI・自動化": [],
+        "📄 プロンプト・文書": [],
+        "📊 管理・ダッシュボード": [],
+        "🔧 開発・システム": [],
+        "📁 データ・ファイル": [],
+        "🌐 その他・連携": []
+    }
+    
+    # カテゴリマッピング
+    category_mapping = {
+        "🚀 初心者ガイド": "🚀 スタートガイド",
+        "💬 会話履歴管理": "💬 チャット・会話",
+        "💬 AIチャット": "💬 チャット・会話",
+        "🎯 会話履歴統合デモ": "💬 チャット・会話",
+        "🤖 AI インタープリター": "🤖 AI・自動化",
+        "🤖 Open Interpreter": "🤖 AI・自動化",
+        "🤖 RPA自動化システム": "🤖 AI・自動化",
+        "🤖 GitHub ISSUE自動生成システム": "🤖 AI・自動化",
+        "🚀 GitHub ISSUE自動化": "🤖 AI・自動化",
+        "📄 ドキュメント生成": "📄 プロンプト・文書",
+        "💾 プロンプト管理システム": "📄 プロンプト・文書",
+        "📄 プログラム生成AI": "📄 プロンプト・文書",
+        "🚀 統合管理ダッシュボード": "📊 管理・ダッシュボード",
+        "🎯 統合承認システム": "📊 管理・ダッシュボード",
+        "🎯 ContBK統合ダッシュボード": "📊 管理・ダッシュボード",
+        "🚀 Dify環境管理": "📊 管理・ダッシュボード",
+        "🔧 UI検証・システム診断": "🔧 開発・システム",
+        "✨ Memory Restore": "🔧 開発・システム",
+        "✨ Memory Restore New": "🔧 開発・システム",
+        "📁 ファイル管理": "📁 データ・ファイル",
+        "🚗 データベース管理": "📁 データ・ファイル",
+        "🌐 HTML表示": "🌐 その他・連携",
+        "🐙 GitHub Issue Creator": "🌐 その他・連携",
+        "🌤️ 天気予報": "🌐 その他・連携",
+        "🖼️ 画像からUI生成": "🌐 その他・連携",
+        "🎨 フロントエンド生成": "🌐 その他・連携"
+    }
+    
+    # インターフェースを分類
+    for interface, name in zip(interfaces, names):
+        category = category_mapping.get(name, "🌐 その他・連携")
+        categories[category].append((interface, name))
+    
+    return categories
 
-    gradio_interfaces, gradio_names = include_gradio_interfaces()
-
-    all_interfaces = gradio_interfaces
-    all_names = gradio_names
-
-    try:
-        # Create a fresh TabbedInterface to avoid rendering conflicts
-        tabs = gr.TabbedInterface(all_interfaces, all_names)
-        tabs.queue()
-        return tabs
-    except Exception as e:
-        print(f"❌ TabbedInterface creation failed: {e}")
-        # Fallback: create a simple interface with more interfaces including integrated dashboard
-        # Try to include at least 12 interfaces to capture the integrated dashboard (#11)
-        safe_interfaces = all_interfaces[:12] if len(all_interfaces) > 12 else all_interfaces
-        safe_names = all_names[:12] if len(all_names) > 12 else all_names
+def create_hierarchical_interface(categories):
+    """階層化されたインターフェースを作成"""
+    
+    # まず、カテゴリごとに有効なインターフェースを収集
+    valid_category_interfaces = []
+    valid_category_names = []
+    
+    for category_name, category_interfaces in categories.items():
+        if not category_interfaces:  # 空のカテゴリはスキップ
+            continue
         
-        if safe_interfaces:
-            try:
-                fallback_tabs = gr.TabbedInterface(safe_interfaces, safe_names)
-                fallback_tabs.queue()
-                return fallback_tabs
-            except Exception as fallback_error:
-                print(f"❌ Fallback interface creation failed: {fallback_error}")
-                # Return a minimal working interface
-                with gr.Blocks() as minimal_interface:
-                    gr.Markdown("# 🚀 システムが起動中です...")
-                    gr.Markdown("インターフェースの読み込みでエラーが発生しました。")
-                return minimal_interface
-        else:
-            # Return a minimal working interface
-            with gr.Blocks() as minimal_interface:
+        try:
+            if len(category_interfaces) == 1:
+                # 1つの場合はそのまま使用
+                interface, name = category_interfaces[0]
+                valid_category_interfaces.append(interface)
+                valid_category_names.append(f"{category_name}")
+            else:
+                # 複数の場合はサブタブを作成
+                sub_interfaces = [item[0] for item in category_interfaces]
+                sub_names = [item[1] for item in category_interfaces]
+                
+                # サブタブを作成
+                sub_tabs = gr.TabbedInterface(sub_interfaces, sub_names)
+                valid_category_interfaces.append(sub_tabs)
+                valid_category_names.append(f"{category_name}")
+                
+        except Exception as e:
+            print(f"カテゴリ {category_name} の処理でエラー: {e}")
+            continue
+    
+    # メインのタブ付きインターフェースを作成
+    if valid_category_interfaces:
+        try:
+            main_interface = gr.TabbedInterface(
+                valid_category_interfaces, 
+                valid_category_names,
+                title="🚀 AI-Human協働開発システム"
+            )
+            return main_interface
+        except Exception as e:
+            print(f"メインインターフェース作成エラー: {e}")
+            # フォールバック: シンプルなBlocks形式
+            with gr.Blocks(title="🚀 AI-Human協働開発システム") as fallback_interface:
+                gr.Markdown("# 🚀 AI-Human協働開発システム")
+                gr.Markdown("**階層化インターフェースの作成に失敗しました。シンプル表示モードで動作しています。**")
+                
+                for i, (interface, name) in enumerate(zip(valid_category_interfaces, valid_category_names)):
+                    with gr.Tab(name):
+                        try:
+                            interface.render()
+                        except:
+                            gr.Markdown(f"**{name}** の読み込みに失敗しました。")
+            return fallback_interface
+    else:
+        # 有効なインターフェースがない場合
+        with gr.Blocks(title="🚀 AI-Human協働開発システム") as empty_interface:
+            gr.Markdown("# 🚀 システムが起動中です...")
+            gr.Markdown("利用可能なインターフェースがありません。")
+        return empty_interface
+
+def setup_gradio_interfaces():
+    """階層化されたGradioインターフェースを設定 - シンプル版"""
+    print("🔍 setup_gradio_interfaces() 開始 - シンプル階層化")
+    
+    try:
+        # インターフェースを取得
+        gradio_interfaces, gradio_names = include_gradio_interfaces()
+        print(f"🔍 取得したインターフェース数: {len(gradio_interfaces)}")
+        
+        if not gradio_interfaces:
+            print("⚠️ インターフェースが見つかりません")
+            with gr.Blocks(title="🚀 AI-Human協働開発システム") as minimal_interface:
                 gr.Markdown("# 🚀 システムが起動中です...")
                 gr.Markdown("利用可能なインターフェースがありません。")
             return minimal_interface
+        
+        # カテゴリ別に整理（シンプル版）
+        startup_interfaces = []
+        startup_names = []
+        main_interfaces = []
+        main_names = []
+        
+        for interface, name in zip(gradio_interfaces, gradio_names):
+            if "初心者" in name or "ガイド" in name or "スタート" in name:
+                startup_interfaces.append(interface)
+                startup_names.append(name)
+            else:
+                main_interfaces.append(interface)
+                main_names.append(name)
+        
+        # 階層化されたインターフェースを作成（シンプル版）
+        print("🔍 シンプル階層化インターフェース作成")
+        
+        with gr.Blocks(title="🚀 AI-Human協働開発システム") as main_interface:
+            gr.Markdown("# 🚀 AI-Human協働開発システム")
+            gr.Markdown("**24時間での高速開発を実現する、genuineなAI-Human協働システム**")
+            
+            # スタートガイド
+            if startup_interfaces:
+                with gr.Tab("🚀 スタートガイド"):
+                    gr.Markdown("### 初心者向けガイドと使い方")
+                    if len(startup_interfaces) == 1:
+                        startup_interfaces[0].render()
+                    else:
+                        startup_tabs = gr.TabbedInterface(startup_interfaces, startup_names)
+            
+            # その他の機能（最大10個まで）
+            display_interfaces = main_interfaces[:10]
+            display_names = main_names[:10]
+            
+            if display_interfaces:
+                with gr.Tab("🛠️ システム機能"):
+                    gr.Markdown(f"### システムの主要機能 ({len(display_interfaces)}個)")
+                    if len(display_interfaces) == 1:
+                        display_interfaces[0].render()
+                    else:
+                        main_tabs = gr.TabbedInterface(display_interfaces, display_names)
+            
+            # 残りの機能（もしあれば）
+            if len(main_interfaces) > 10:
+                remaining_interfaces = main_interfaces[10:]
+                remaining_names = main_names[10:]
+                with gr.Tab("� 追加機能"):
+                    gr.Markdown(f"### その他の機能 ({len(remaining_interfaces)}個)")
+                    if len(remaining_interfaces) == 1:
+                        remaining_interfaces[0].render()
+                    else:
+                        remaining_tabs = gr.TabbedInterface(remaining_interfaces, remaining_names)
+        
+        print("✅ シンプル階層化インターフェース作成完了")
+        main_interface.queue()
+        return main_interface
+        
+    except Exception as e:
+        print(f"❌ シンプル階層化でもエラー: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # 最終フォールバック: 従来のフラット形式
+        print("🔄 従来形式にフォールバック")
+        try:
+            gradio_interfaces, gradio_names = include_gradio_interfaces()
+            if gradio_interfaces:
+                # 最大8個に制限
+                safe_interfaces = gradio_interfaces[:8]
+                safe_names = gradio_names[:8]
+                print(f"🔍 フォールバック表示: {safe_names}")
+                tabs = gr.TabbedInterface(safe_interfaces, safe_names, title="🚀 AI-Human協働開発システム")
+                tabs.queue()
+                return tabs
+        except Exception as final_error:
+            print(f"❌ 最終フォールバックもエラー: {final_error}")
+            
+        # 緊急フォールバック
+        with gr.Blocks(title="🚀 AI-Human協働開発システム") as emergency_interface:
+            gr.Markdown("# 🚀 システムが起動中です...")
+            gr.Markdown("インターフェースの読み込みでエラーが発生しました。ページを再読み込みしてください。")
+        return emergency_interface
 if __name__ == "__main__":
     interfaces, names = include_gradio_interfaces()
