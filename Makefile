@@ -7,7 +7,7 @@ COLOR_CYAN=\033[1;36m
 COLOR_GREEN=\033[1;32m
 
 # Defines the targets help, install, dev-install, and run as phony targets.
-.PHONY: help install run dev debug app server test clean requirements ci-test ci-quick ci-full stop-port
+.PHONY: help install run dev debug app server test clean requirements ci-test ci-quick ci-full stop-port gui gui-stop gui-logs gui-restart gui-simple
 
 #sets the default goal to help when no target is specified on the command line.
 .DEFAULT_GOAL := help
@@ -28,6 +28,11 @@ help:
 	@echo "  dev            	Run the application in development mode with hot reload - auto stops port 7860"
 	@echo "  debug          	Run the application in debug mode (no reload) - auto stops port 7860"
 	@echo "  server         	Run the ASGI server directly with uvicorn - auto stops port 7860"
+	@echo "  gui            	Start AI GUI Desktop Environment (http://localhost:6080)"
+	@echo "  gui-simple     	Start simple GUI environment (http://localhost:6081)"
+	@echo "  gui-stop       	Stop GUI Desktop Environment"
+	@echo "  gui-restart    	Restart GUI Desktop Environment"
+	@echo "  gui-logs       	Show GUI logs"
 	@echo "  stop-port      	Stop any process running on port 7860"
 	@echo "  ci-test        	Run CI/CD automated tests"
 	@echo "  ci-quick       	Run quick CI test (no GitHub Issue)"
@@ -153,6 +158,31 @@ docker-up:
 docker-down:
 	@echo -e "$(COLOR_CYAN)Stopping Docker containers...$(COLOR_RESET)"
 	docker-compose down
+
+# GUI commands
+gui:
+	@echo -e "$(COLOR_CYAN)Starting AI GUI Desktop Environment...$(COLOR_RESET)"
+	@echo -e "$(COLOR_GREEN)GUI will be available at: http://localhost:6080$(COLOR_RESET)"
+	@echo -e "$(COLOR_GREEN)VNC direct access: localhost:5901$(COLOR_RESET)"
+	@echo -e "$(COLOR_GREEN)Default credentials: copilot/copilot$(COLOR_RESET)"
+	docker-compose -f docker-ai-gui-desktop.yml up -d
+
+gui-stop:
+	@echo -e "$(COLOR_CYAN)Stopping GUI Desktop Environment...$(COLOR_RESET)"
+	docker-compose -f docker-ai-gui-desktop.yml down
+
+gui-logs:
+	@echo -e "$(COLOR_CYAN)Showing GUI logs...$(COLOR_RESET)"
+	docker-compose -f docker-ai-gui-desktop.yml logs -f
+
+gui-restart:
+	@echo -e "$(COLOR_CYAN)Restarting GUI Desktop Environment...$(COLOR_RESET)"
+	docker-compose -f docker-ai-gui-desktop.yml restart
+
+gui-simple:
+	@echo -e "$(COLOR_CYAN)Starting simple GUI environment...$(COLOR_RESET)"
+	@echo -e "$(COLOR_GREEN)GUI will be available at: http://localhost:6081$(COLOR_RESET)"
+	docker-compose -f docker-compose-gui.yml up -d
 
 # CI/CD commands
 ci-test:
