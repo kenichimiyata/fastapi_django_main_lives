@@ -231,3 +231,18 @@ private_ai_moments/
 docs/images/collected/test_2/118224532-3842c400-b438-11eb-923d-a5f66fa6785a.png
 docs/images/screenshots/contbk_dashboard.png
 staticfiles/haru_greeter_pro_jp/
+
+# Large files causing push failures (>10MB)
+# Dify database files
+dify-setup/dify/docker/volumes/db/data/pgdata/
+dify-setup/dify/docker/volumes/redis/data/
+
+# Vendor binaries
+vendor/simple_ai_env/bin/
+vendor/dify-setup/dify
+
+# Docker volumes and data
+**/docker/volumes/
+**/pgdata/
+**/pg_wal/
+*.rdb
