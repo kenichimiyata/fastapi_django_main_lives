@@ -21,6 +21,7 @@
 				"python.defaultInterpreterPath": "/usr/local/bin/python3"
 			}
 		}
-	},	"forwardPorts": [7860, 8000],
-	"postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && npm install -g typescript yarn --no-audit --no-fund && echo 'DevContainer setup complete! 🚀'"
+	},
+	"forwardPorts": [7860, 8000],
+	"postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && echo 'DevContainer setup complete! 🚀'"
 }
