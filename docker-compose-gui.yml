@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: .devcontainer/Dockerfile-gui
     volumes:
-      - ../:/workspace:cached
+      - .:/workspace:cached
       - /var/run/docker.sock:/var/run/docker-host.sock
     environment:
       - DISPLAY=:1
