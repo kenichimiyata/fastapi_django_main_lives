@@ -403,5 +403,9 @@ class GradioURLFixMiddleware(BaseHTTPMiddleware):
 # Gradio URL修正ミドルウェアを追加
 app.add_middleware(GradioURLFixMiddleware)
 
+# Route API の追加
+from routers.route_api import router as route_api_router
+app.include_router(route_api_router, prefix="/api/v1", tags=["routes"])
+
 
 

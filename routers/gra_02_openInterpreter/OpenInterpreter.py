@@ -69,6 +69,7 @@ import sqlite3
 from datetime import datetime
 from command.postgresz import initialize_db,add_message_to_db,get_recent_messages
 from config.database import get_db_connection, add_chat_message, get_chat_history
+from config.settings import settings
 
 def initialize_dbs():
     """データベースの初期化"""
@@ -103,7 +104,7 @@ def format_responses(chunk, full_response):
 
 #########################
 def chat_with_interpreter(message, history=None, a=None, b=None, c=None, d=None,f=None):
-    if c != os.getenv("openinterpreter_secret"):
+    if c != settings.openinterpreter_secret:
         return message, history
 
     if message == "reset":

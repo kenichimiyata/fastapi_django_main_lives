@@ -8,15 +8,47 @@ import gradio as gr
 import sqlite3
 import os
 import json
+import sys
 from datetime import datetime
 from typing import List, Dict, Optional
 
-# データベースパス
-DB_PATH = "/workspaces/fastapi_django_main_live/prompts.db"
+# 統一データベースヘルパーをインポート
+try:
+    from .db_helper import get_unified_db_connection, ensure_unified_tables
+except ImportError:
+    # パスを追加してconfig/database.pyにアクセス
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.join(current_dir, '..', '..')
+    sys.path.append(project_root)
+    
+    def get_unified_db_connection(db_name='approval_system'):
+        try:
+            from config.database import get_db_connection
+            return get_db_connection(db_name)
+        except ImportError:
+            db_path = f"/workspaces/fastapi_django_main_lives/database/{db_name}.db"
+            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+            return sqlite3.connect(db_path)
+    
+    def ensure_unified_tables():
+        try:
+            from config.database import ensure_tables_exist
+            ensure_tables_exist()
+        except ImportError:
+            pass
 
 def init_integrated_db():
     """統合データベース初期化"""
-    conn = sqlite3.connect(DB_PATH)
+    try:
+        # 統一された設定を使用
+        ensure_unified_tables()
+        conn = get_unified_db_connection('approval_system')
+    except Exception as e:
+        print(f"Warning: Failed to use unified database config: {e}")
+        # フォールバック: 直接接続
+        db_path = "/workspaces/fastapi_django_main_lives/database/approval_system.db"
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
     # 承認キューテーブル
@@ -67,7 +99,7 @@ def init_integrated_db():
 
 def get_approval_queue() -> List[Dict]:
     """承認キュー取得"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_unified_db_connection('approval_system')
     cursor = conn.cursor()
     cursor.execute('''
         SELECT id, issue_title, issue_body, requester, priority, approval_status, github_repo, created_at, approved_at
@@ -97,7 +129,7 @@ def add_to_approval_queue(title: str, content: str, source: str = "manual", prio
     if not title or not content:
         return "❌ タイトルと内容を入力してください"
     
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_unified_db_connection('approval_system')
     cursor = conn.cursor()
     cursor.execute(
         'INSERT INTO approval_queue (issue_title, issue_body, requester, priority) VALUES (?, ?, ?, ?)',
@@ -110,7 +142,7 @@ def add_to_approval_queue(title: str, content: str, source: str = "manual", prio
 
 def approve_request(request_id: int) -> str:
     """リクエスト承認"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_unified_db_connection('approval_system')
     cursor = conn.cursor()
     
     # リクエスト情報取得
@@ -148,7 +180,7 @@ def approve_request(request_id: int) -> str:
 
 def reject_request(request_id: int, reason: str = "") -> str:
     """リクエスト拒否"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_unified_db_connection('approval_system')
     cursor = conn.cursor()
     
     # リクエスト情報取得
@@ -179,7 +211,7 @@ def reject_request(request_id: int, reason: str = "") -> str:
 
 def get_execution_logs() -> List[Dict]:
     """実行ログ取得"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_unified_db_connection('approval_system')
     cursor = conn.cursor()
     cursor.execute('''
         SELECT id, approval_id, status, github_repo_url, execution_start, execution_end, result_summary, error_message
@@ -208,28 +240,46 @@ def get_execution_logs() -> List[Dict]:
 
 def get_system_status() -> Dict:
     """システム状況取得"""
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    # 基本統計
-    cursor.execute('SELECT COUNT(*) FROM prompts')
-    total_prompts = cursor.fetchone()[0]
-    
-    cursor.execute('SELECT COUNT(*) FROM approval_queue WHERE approval_status = "pending_review"')
-    pending_approvals = cursor.fetchone()[0]
-    
-    cursor.execute('SELECT COUNT(*) FROM execution_log WHERE status = "completed"')
-    completed_executions = cursor.fetchone()[0]
-    
-    # 今日の活動
-    today = datetime.now().strftime('%Y-%m-%d')
-    cursor.execute('SELECT COUNT(*) FROM prompts WHERE DATE(created_at) = ?', (today,))
-    today_prompts = cursor.fetchone()[0]
-    
-    cursor.execute('SELECT COUNT(*) FROM approval_queue WHERE DATE(created_at) = ?', (today,))
-    today_requests = cursor.fetchone()[0]
-    
-    conn.close()
+    try:
+        # プロンプト統計（prompts.dbから）
+        prompts_conn = get_unified_db_connection('prompts')
+        prompts_cursor = prompts_conn.cursor()
+        prompts_cursor.execute('SELECT COUNT(*) FROM prompts')
+        total_prompts = prompts_cursor.fetchone()[0]
+        
+        # 今日のプロンプト
+        today = datetime.now().strftime('%Y-%m-%d')
+        prompts_cursor.execute('SELECT COUNT(*) FROM prompts WHERE DATE(created_at) = ?', (today,))
+        today_prompts = prompts_cursor.fetchone()[0]
+        prompts_conn.close()
+        
+        # 承認システム統計（approval_system.dbから）
+        approval_conn = get_unified_db_connection('approval_system')
+        approval_cursor = approval_conn.cursor()
+        
+        approval_cursor.execute('SELECT COUNT(*) FROM approval_queue WHERE approval_status = "pending_review"')
+        pending_approvals = approval_cursor.fetchone()[0]
+        
+        approval_cursor.execute('SELECT COUNT(*) FROM approval_queue WHERE DATE(created_at) = ?', (today,))
+        today_requests = approval_cursor.fetchone()[0]
+        
+        # execution_logテーブルがある場合のみ実行
+        try:
+            approval_cursor.execute('SELECT COUNT(*) FROM execution_log WHERE status = "completed"')
+            completed_executions = approval_cursor.fetchone()[0]
+        except:
+            completed_executions = 0
+            
+        approval_conn.close()
+        
+    except Exception as e:
+        # エラーが発生した場合はデフォルト値を返す
+        print(f"Warning: Database error in get_system_status: {e}")
+        total_prompts = 0
+        pending_approvals = 0
+        completed_executions = 0
+        today_prompts = 0
+        today_requests = 0
     
     return {
         'total_prompts': total_prompts,
