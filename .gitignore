@@ -6,6 +6,7 @@ __pycache__/
 # Large files and database files
 dify-setup/dify/docker/volumes/
 vendor/simple_ai_env/
+vendor/dify-setup/dify/
 *.pgdata
 */pg_wal/*
 */pgdata/*
