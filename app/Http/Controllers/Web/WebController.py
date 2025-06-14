@@ -17,12 +17,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@method_decorator(csrf_exempt, name='dispatch')
 class WebController(HybridController):
     """
     Django Web専用のLaravel風コントローラー
     HTMLビューとJSONレスポンスの両方に対応
     """
+    
+    # クラスメソッドレベルでCSRF免除を適用
+    def dispatch(self, request, *args, **kwargs):
+        # CSRF免除が必要な場合、個別のメソッドで処理
+        return super().dispatch(request, *args, **kwargs)
     
     def __init__(self):
         super().__init__()

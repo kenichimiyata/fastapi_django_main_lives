@@ -15,11 +15,19 @@ def register_laravel_routes(app: FastAPI):
     
     # Web Routes
     try:
-        from routes.web import router as web_router
-        app.include_router(web_router, tags=["web"])
-        print("✅ Web Routes registered")
+        from routes.web_simple import router as web_simple_router
+        app.include_router(web_simple_router, tags=["web"])
+        print("✅ Web Routes (Simple) registered")
     except ImportError as e:
         print(f"⚠️  Web Routes import error: {e}")
+        
+    # Original Web Routes (fallback)
+    try:
+        from routes.web import router as web_router
+        app.include_router(web_router, tags=["web-original"])
+        print("✅ Web Routes (Original) registered")
+    except Exception as e:
+        print(f"⚠️  Original Web Routes import error: {e}")
     
     # API Routes  
     try:
@@ -37,13 +45,15 @@ def register_laravel_routes(app: FastAPI):
     except ImportError as e:
         print(f"⚠️  Polls Routes import error: {e}")
     
-    # Hybrid Routes
+    # Hybrid Routes (一時的に無効化)
     try:
-        from routes.hybrid import router as hybrid_router
-        app.include_router(hybrid_router, prefix="/hybrid", tags=["hybrid"])
-        print("✅ Hybrid Routes registered")
+        # from routes.hybrid import router as hybrid_router
+        # app.include_router(hybrid_router, prefix="/hybrid", tags=["hybrid"])
+        print("⚠️ Hybrid Routes は一時的に無効化されています")
     except ImportError as e:
         print(f"⚠️  Hybrid Routes import error: {e}")
+    except Exception as e:
+        print(f"⚠️  Hybrid Routes general error: {e}")
     
     # Gradio Interface Mount
     try:

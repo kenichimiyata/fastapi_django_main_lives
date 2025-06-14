@@ -7,7 +7,7 @@ COLOR_CYAN=\033[1;36m
 COLOR_GREEN=\033[1;32m
 
 # Defines the targets help, install, dev-install, and run as phony targets.
-.PHONY: help install run dev debug app server test clean requirements ci-test ci-quick ci-full
+.PHONY: help install run dev debug app server test clean requirements ci-test ci-quick ci-full stop-port
 
 #sets the default goal to help when no target is specified on the command line.
 .DEFAULT_GOAL := help
@@ -24,10 +24,11 @@ help:
 	@echo "  help           	Return this message with usage instructions."
 	@echo "  install        	Will install the dependencies using Poetry."
 	@echo "  run <folder_name>  Runs GPT Engineer on the folder with the given name."
-	@echo "  app            	Run the main FastAPI application (app.py)"
-	@echo "  dev            	Run the application in development mode with hot reload"
-	@echo "  debug          	Run the application in debug mode (no reload)"
-	@echo "  server         	Run the ASGI server directly with uvicorn"
+	@echo "  app            	Run the main FastAPI application (app.py) - auto stops port 7860"
+	@echo "  dev            	Run the application in development mode with hot reload - auto stops port 7860"
+	@echo "  debug          	Run the application in debug mode (no reload) - auto stops port 7860"
+	@echo "  server         	Run the ASGI server directly with uvicorn - auto stops port 7860"
+	@echo "  stop-port      	Stop any process running on port 7860"
 	@echo "  ci-test        	Run CI/CD automated tests"
 	@echo "  ci-quick       	Run quick CI test (no GitHub Issue)"
 	@echo "  ci-full        	Run full CI pipeline with GitHub Issue"
@@ -85,19 +86,29 @@ ssh:
 	ssh-keygen -t rsa -b 4096 \-f ~/.ssh/id_rsa_new
 
 # Application commands
-app:
+stop-port:
+	@echo -e "$(COLOR_CYAN)Stopping processes on port 7860...$(COLOR_RESET)"
+	@if lsof -ti:7860 > /dev/null 2>&1; then \
+		echo -e "$(COLOR_CYAN)Found process on port 7860, stopping...$(COLOR_RESET)"; \
+		kill -9 $$(lsof -ti:7860) 2>/dev/null || true; \
+		sleep 2; \
+	else \
+		echo -e "$(COLOR_GREEN)No process found on port 7860$(COLOR_RESET)"; \
+	fi
+
+app: stop-port
 	@echo -e "$(COLOR_CYAN)Starting FastAPI application...$(COLOR_RESET)"
 	SPACE_ID="" python app.py
 
-dev:
+dev: stop-port
 	@echo -e "$(COLOR_CYAN)Starting application in development mode...$(COLOR_RESET)"
 	SPACE_ID="" python app.py
 
-debug:
+debug: stop-port
 	@echo -e "$(COLOR_CYAN)Starting application in debug mode...$(COLOR_RESET)"
 	SPACE_ID="" python app.py --debug
 
-server:
+server: stop-port
 	@echo -e "$(COLOR_CYAN)Starting ASGI server directly...$(COLOR_RESET)"
 	uvicorn mysite.asgi:app --host 0.0.0.0 --port 7860 --reload
 
