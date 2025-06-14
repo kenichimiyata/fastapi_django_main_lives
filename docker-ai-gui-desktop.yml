@@ -2,8 +2,6 @@
 # Based on dorowu/ubuntu-desktop-lxde-vnc for reliability
 # 30-Year Dream: Human-AI Collaborative Desktop
 
-version: '3.8'
-
 services:
   ai-gui-desktop:
     image: dorowu/ubuntu-desktop-lxde-vnc:focal
@@ -56,22 +54,10 @@ networks:
 volumes:
   copilot-ai-memory:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /tmp/copilot-ai-memory
   copilot-gui-data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /tmp/copilot-gui-data
   copilot-browser-data:
     driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /tmp/copilot-browser-data
   copilot-desktop-config:
     driver: local
   copilot-desktop-cache:

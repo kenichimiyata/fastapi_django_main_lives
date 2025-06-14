@@ -3,10 +3,7 @@ FROM mcr.microsoft.com/devcontainers/python:1-3.11-bullseye
 # Install Docker-in-Docker
 RUN curl -fsSL https://get.docker.com | sh
 
-# Install Node.js manually as backup
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install -g typescript yarn
+# Note: Node.js is installed via devcontainer features in devcontainer.json
 
 # Install GUI dependencies
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \

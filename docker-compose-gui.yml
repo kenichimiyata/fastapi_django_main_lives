@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   app-gui:
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile-gui
     volumes:
-      - ../:/workspace:cached
+      - .:/workspace:cached
       - /var/run/docker.sock:/var/run/docker-host.sock
     environment:
       - DISPLAY=:1
