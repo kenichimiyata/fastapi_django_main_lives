@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-VNC Desktop Automation Script
-AIがVNCデスクトップを操作するためのスクリプト
+noVNC Desktop Automation Script
+noVNC環境での画面操作・ブラウザ自動化スクリプト
 """
 
 import time
@@ -266,19 +266,203 @@ class DesktopAutomation:
         except Exception as e:
             print(f"❌ マウス座標取得例外: {e}")
             return None, None
-
+    
+    def setup_novnc_environment(self):
+        """noVNC環境のセットアップ"""
+        try:
+            # 必要なパッケージのインストール確認
+            packages = ["selenium", "requests", "beautifulsoup4"]
+            for package in packages:
+                try:
+                    __import__(package.replace("-", "_"))
+                    print(f"✅ {package} インストール済み")
+                except ImportError:
+                    print(f"📦 {package} をインストール中...")
+                    subprocess.run(["pip3", "install", package], check=True)
+            
+            # ディスプレイ環境変数設定
+            os.environ['DISPLAY'] = ':1'
+            print("🖥️ Display環境を :1 に設定")
+            
+            # スクリーンショットディレクトリ作成
+            os.makedirs("/code/screenshots", exist_ok=True)
+            print("📁 スクリーンショットディレクトリ作成完了")
+            
+            return True
+        except Exception as e:
+            print(f"❌ 環境セットアップ失敗: {e}")
+            return False
+    
+    def browser_automation(self, url="https://www.google.com"):
+        """ブラウザ自動化"""
+        try:
+            from selenium import webdriver
+            from selenium.webdriver.chrome.options import Options
+            from selenium.webdriver.common.by import By
+            
+            # Chromeオプション設定
+            chrome_options = Options()
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--display=:1")
+            chrome_options.add_argument("--window-size=1920,1080")
+            
+            print("🌐 ブラウザを起動中...")
+            driver = webdriver.Chrome(options=chrome_options)
+            driver.get(url)
+            
+            print(f"📄 ページタイトル: {driver.title}")
+            
+            # スクリーンショット撮影
+            screenshot_path = "/code/screenshots/browser_automation.png"
+            driver.save_screenshot(screenshot_path)
+            print(f"📸 ブラウザスクリーンショット保存: {screenshot_path}")
+            
+            # 簡単な操作例
+            if "google" in url.lower():
+                try:
+                    search_box = driver.find_element(By.NAME, "q")
+                    search_box.send_keys("noVNC automation test")
+                    search_box.submit()
+                    time.sleep(3)
+                    
+                    # 検索結果のスクリーンショット
+                    driver.save_screenshot("/code/screenshots/search_result.png")
+                    print("🔍 Google検索を実行しました")
+                except Exception as e:
+                    print(f"⚠️ 検索操作スキップ: {e}")
+            
+            time.sleep(2)
+            driver.quit()
+            print("✅ ブラウザ自動化完了")
+            
+        except Exception as e:
+            print(f"❌ ブラウザ自動化失敗: {e}")
+    
+    def gui_automation_demo(self):
+        """GUI操作のデモンストレーション"""
+        try:
+            print("🖱️ GUI自動化デモを開始...")
+            
+            # 画面サイズ取得
+            screen_width, screen_height = pyautogui.size()
+            print(f"📐 画面サイズ: {screen_width}x{screen_height}")
+            
+            # マウス操作
+            print("🖱️ マウスを画面中央に移動...")
+            pyautogui.moveTo(screen_width // 2, screen_height // 2, duration=1)
+            
+            # 右クリックメニュー表示
+            pyautogui.rightClick()
+            time.sleep(1)
+            pyautogui.press('escape')  # メニューを閉じる
+            
+            # ターミナルを開く（Ctrl+Alt+T）
+            print("💻 ターミナルを開いています...")
+            pyautogui.hotkey('ctrl', 'alt', 't')
+            time.sleep(2)
+            
+            # コマンド入力
+            pyautogui.typewrite('echo "Hello from noVNC automation!"')
+            pyautogui.press('enter')
+            time.sleep(1)
+            
+            # スクリーンショット撮影
+            self.take_screenshot("/code/screenshots/gui_demo.png")
+            
+            # ターミナルを閉じる
+            pyautogui.hotkey('alt', 'f4')
+            
+            print("✅ GUI自動化デモ完了")
+            
+        except Exception as e:
+            print(f"❌ GUI自動化失敗: {e}")
+    
+    def web_scraping_demo(self):
+        """Webスクレイピングのデモ"""
+        try:
+            import requests
+            from bs4 import BeautifulSoup
+            
+            print("🕷️ Webスクレイピングデモを開始...")
+            
+            # 簡単なWebページを取得
+            response = requests.get("https://httpbin.org/html")
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # タイトルを取得
+            title = soup.find('title').text if soup.find('title') else "No title"
+            print(f"📄 取得したページタイトル: {title}")
+            
+            # 結果をファイルに保存
+            with open("/code/screenshots/scraping_result.txt", "w") as f:
+                f.write(f"タイトル: {title}\n")
+                f.write(f"取得時刻: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"HTMLコンテンツ:\n{soup.prettify()}")
+            
+            print("📁 スクレイピング結果を保存しました")
+            
+        except Exception as e:
+            print(f"❌ Webスクレイピング失敗: {e}")
 
 def demo_automation():
-    """デモンストレーション"""
-    print("🤖 VNCデスクトップ自動操作デモ開始")
+    """デモンストレーション実行"""
+    print("🚀 noVNC Desktop Automation デモを開始します")
     
     desktop = DesktopAutomation()
     
+    # noVNC環境のセットアップ
+    if not desktop.setup_novnc_environment():
+        print("❌ 環境セットアップに失敗しました")
+        return
+    
+    print("\n📋 実行するタスクを選択してください:")
+    print("1. スクリーンショット撮影")
+    print("2. ブラウザ自動化")
+    print("3. GUI操作デモ")
+    print("4. Webスクレイピングデモ")
+    print("5. 全て実行")
+    print("6. 既存のVNC操作デモ")
+    
+    choice = input("\n選択 (1-6): ").strip()
+    
+    if choice == "1":
+        desktop.take_screenshot("/code/screenshots/manual_screenshot.png")
+    elif choice == "2":
+        desktop.browser_automation()
+    elif choice == "3":
+        desktop.gui_automation_demo()
+    elif choice == "4":
+        desktop.web_scraping_demo()
+    elif choice == "5":
+        # 全て実行
+        desktop.take_screenshot("/code/screenshots/start_screenshot.png")
+        time.sleep(2)
+        desktop.browser_automation()
+        time.sleep(2)
+        desktop.gui_automation_demo()
+        time.sleep(2)
+        desktop.web_scraping_demo()
+        time.sleep(2)
+        desktop.take_screenshot("/code/screenshots/end_screenshot.png")
+    elif choice == "6":
+        # 既存のVNC操作デモ
+        run_existing_vnc_demo(desktop)
+    else:
+        print("❌ 無効な選択です")
+
+def run_existing_vnc_demo(desktop):
+    """既存のVNC操作デモを実行"""
+    print("🖥️ 既存のVNC操作デモを実行します...")
+    
     # 1. スクリーンショット撮影
-    desktop.take_screenshot("/tmp/demo_screenshot.png")
+    desktop.take_screenshot("/code/screenshots/vnc_demo_start.png")
     
     # 2. 画面サイズ取得
     width, height = desktop.get_screen_size()
+    if width and height:
+        print(f"📐 画面サイズ: {width}x{height}")
     
     # 3. 画面中央をクリック
     center_x, center_y = width // 2, height // 2
@@ -291,7 +475,7 @@ def demo_automation():
     
     # 5. テストテキスト入力
     time.sleep(1)
-    desktop.type_text("Hello from AI! こんにちは！")
+    desktop.type_text("Hello from noVNC AI! こんにちは！")
     
     # 6. キー操作のテスト
     time.sleep(1)
@@ -303,7 +487,8 @@ def demo_automation():
     desktop.open_application("terminal")
     
     time.sleep(2)
-    print("✅ デモンストレーション完了！")
+    desktop.take_screenshot("/code/screenshots/vnc_demo_end.png")
+    print("✅ VNCデモンストレーション完了！")
 
 
 if __name__ == "__main__":
