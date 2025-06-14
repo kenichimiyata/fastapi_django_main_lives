@@ -27,7 +27,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     x11vnc \
     xvfb \
     # Audio support
-    pulseaudio \    && apt-get autoremove -y && apt-get clean -y
+    pulseaudio \
+    && apt-get autoremove -y && apt-get clean -y
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
