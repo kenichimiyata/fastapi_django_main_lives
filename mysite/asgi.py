@@ -251,7 +251,7 @@ async def dashboard():
             
             <div class="nav-section">
                 <h3>Main Access</h3>
-                <a href="/gradio" class="nav-item primary">
+                <a href="/gradio/" class="nav-item primary">
                     🎯 All Tools (Gradio UI)
                 </a>
             </div>
@@ -268,8 +268,8 @@ async def dashboard():
             
             <div class="nav-section">
                 <h3>Available Tools ({len(tools)})</h3>
-                {chr(10).join([f'<a href="/gradio" class="nav-item">{tool}</a>' for tool in tools[:10]])}
-                {'<a href="/gradio" class="nav-item">... and more</a>' if len(tools) > 10 else ''}
+                {chr(10).join([f'<a href="/gradio/" class="nav-item">{tool}</a>' for tool in tools[:10]])}
+                {'<a href="/gradio/" class="nav-item">... and more</a>' if len(tools) > 10 else ''}
             </div>
         </div>
         
