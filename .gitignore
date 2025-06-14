@@ -3,6 +3,15 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Large files and database files
+dify-setup/dify/docker/volumes/
+vendor/simple_ai_env/
+*.pgdata
+*/pg_wal/*
+*/pgdata/*
+*.rdb
+dump.rdb
+
 # Environment variables
 .env
 .env.local
