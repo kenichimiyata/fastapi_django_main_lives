@@ -68,59 +68,34 @@ def format_response(chunk, full_response):
 import sqlite3
 from datetime import datetime
 from command.postgresz import initialize_db,add_message_to_db,get_recent_messages
-
-# SQLiteの設定
-db_name = "chat_historys.db"
+from config.database import get_db_connection, add_chat_message, get_chat_history
 
 def initialize_dbs():
-    # データベースファイルが存在しない場合に新しく作成
-    if not os.path.exists(db_name):
-        conn = sqlite3.connect(db_name)
+    """データベースの初期化"""
+    # 統一されたデータベース設定を使用
+    with get_db_connection('chat_history') as conn:
         cursor = conn.cursor()
-        # テーブルを作成するSQL文
-        create_table_query = """
-            CREATE TABLE IF NOT EXISTS chat_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            role TEXT,
-            type TEXT,
-            content TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-        """
-        cursor.execute(create_table_query)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                role TEXT,
+                type TEXT,
+                content TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
         conn.commit()
-        conn.close()
-        print("データベースとテーブルが作成されました。")
-    else:
-        print("データベースは既に存在しています。")    
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        role TEXT,
-        type TEXT,
-        content TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-    conn.commit()
-    conn.close()
+    print("✅ データベースが初期化されました")
 
 def add_message_to_dbs(role, message_type, content):
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO history (role, type, content) VALUES (?, ?, ?)", (role, message_type, content))
-    conn.commit()
-    conn.close()
+    """メッセージをデータベースに追加"""
+    add_chat_message(role, message_type, content, 'chat_history')
 
 def get_recent_messagess(limit=5):
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("SELECT role, type, content FROM history ORDER BY timestamp DESC LIMIT ?", (limit,))
-    messages = cursor.fetchall()
-    conn.close()
-    return messages[::-1]  # 最新の20件を取得して逆順にする
+    """最近のメッセージを取得"""
+    messages = get_chat_history(limit, 'chat_history')
+    # フォーマットを既存コードに合わせる
+    return [(msg[0], msg[1], msg[2]) for msg in reversed(messages)]
 
 def format_responses(chunk, full_response):
     # This function will format the response from the interpreter
