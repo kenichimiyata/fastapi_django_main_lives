@@ -6,18 +6,13 @@
 	},
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {
+			"version": "18",
 			"nodeGypDependencies": true,
-			"version": "lts"
-		},
-		"ghcr.io/devcontainers-contrib/features/npm-package:1": {
-			"package": "typescript",
-			"version": "latest"
+			"installYarnUsingApt": true
 		},
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {
-			"moby": true,
-			"azureDnsAutoDetection": true,
-			"installDockerBuildx": true,
 			"version": "latest",
+			"moby": true,
 			"dockerDashComposeVersion": "v2"
 		}
 	},
