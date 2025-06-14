@@ -1,46 +1,27 @@
 {
-	"name": "AI-Human Collaboration Workspace - Enhanced",
-	"build": {
-		"context": "..",
-		"dockerfile": "Dockerfile"
-	},
+	"name": "FastAPI Django Workspace",
+	"image": "mcr.microsoft.com/devcontainers/python:3.11",
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {
-			"version": "18",
-			"nodeGypDependencies": true,
-			"installYarnUsingApt": true
+			"version": "18"
 		},
 		"ghcr.io/devcontainers/features/docker-in-docker:2": {
-			"version": "latest",
-			"moby": true,
-			"dockerDashComposeVersion": "v2"
+			"version": "latest"
 		}
 	},
-	"mounts": [
-		"source=/workspaces/ai-knowledge-vault,target=/ai-knowledge-vault,type=bind"
-	],
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"ms-python.python",
-				"ms-python.pylint",
 				"GitHub.copilot",
 				"ms-toolsai.jupyter",
 				"ms-vscode.vscode-docker"
 			],
 			"settings": {
-				"python.defaultInterpreterPath": "/usr/local/bin/python3",
-				"python.terminal.activateEnvironment": true
+				"python.defaultInterpreterPath": "/usr/local/bin/python3"
 			}
-		},
-		"codespaces": {
-			"openFiles": [
-				"WORLD_FIRST_ACADEMIC_DOCUMENTATION.md",
-				"simple_ai_assistant.py",
-				"ai_memory_restoration_system.py",
-				"史上初AIとの爆笑コラボレーション記録.md"
-			]
 		}
 	},
-	"postCreateCommand": "pip install -r requirements.txt && python3 ai_memory_restoration_system.py && echo 'AI-Human協働環境セットアップ完了！🚀'"
+	"forwardPorts": [7860, 8000],
+	"postCreateCommand": "pip install --upgrade pip && pip install -r requirements.txt && echo 'DevContainer setup complete! 🚀'"
 }
