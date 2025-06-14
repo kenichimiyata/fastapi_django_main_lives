@@ -497,75 +497,78 @@ class ProjectInfoCommand(ArtisanCommand):
         print("   • /hybrid/ - Hybrid Routes")
         print("   • /django/admin/ - Django管理画面")
 
-def main():
-    """Artisanメイン関数"""
+class GradioTestCommand(ArtisanCommand):
+    """Gradio機能テストコマンド"""
     
-    parser = argparse.ArgumentParser(description="🎨 Artisan - Laravel風コマンドラインツール")
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    def __init__(self):
+        super().__init__()
+        self.base_url = "http://localhost:7860"
+        self.gradio_functions = self._discover_gradio_functions()
     
-    # make:controller
-    controller_parser = subparsers.add_parser('make:controller', help='Create a new controller')
-    controller_parser.add_argument('name', help='Controller name')
-    
-    # make:model
-    model_parser = subparsers.add_parser('make:model', help='Create a new model')
-    model_parser.add_argument('name', help='Model name')
-    
-    # make:service  
-    service_parser = subparsers.add_parser('make:service', help='Create a new service')
-    service_parser.add_argument('name', help='Service name')
-    
-    # serve
-    serve_parser = subparsers.add_parser('serve', help='Start development server')
-    serve_parser.add_argument('--port', type=int, default=8000, help='Port number')
-    serve_parser.add_argument('--host', default="0.0.0.0", help='Host address')
-    
-    # route:list
-    subparsers.add_parser('route:list', help='List all registered routes')
-    
-    # make:hybrid
-    hybrid_parser = subparsers.add_parser('make:hybrid', help='Create a new hybrid controller (Django + FastAPI + Gradio)')
-    hybrid_parser.add_argument('name', help='Controller name')
-    hybrid_parser.add_argument('--type', choices=['hybrid', 'api', 'web', 'gradio'], 
-                              default='hybrid', help='Controller type')
-    
-    # project:info
-    subparsers.add_parser('project:info', help='Display project information')
-    
-    args = parser.parse_args()
-    
-    if not args.command:
-        parser.print_help()
-        return
-    
-    # コマンド実行
-    try:
-        if args.command == 'make:controller':
-            cmd = MakeControllerCommand()
-            cmd.handle(args.name)
-        elif args.command == 'make:model':
-            cmd = MakeModelCommand()
-            cmd.handle(args.name)
-        elif args.command == 'make:service':
-            cmd = MakeServiceCommand()
-            cmd.handle(args.name)
-        elif args.command == 'serve':
-            cmd = ServeCommand()
-            cmd.handle(port=args.port, host=args.host)
-        elif args.command == 'route:list':
-            cmd = ListRoutesCommand()
-            cmd.handle()
-        elif args.command == 'make:hybrid':
-            cmd = MakeHybridControllerCommand()
-            cmd.handle(args.name, args.type)
-        elif args.command == 'project:info':
-            cmd = ProjectInfoCommand()
-            cmd.handle()
-        else:
-            print(f"❌ Unknown command: {args.command}")
+    def _discover_gradio_functions(self):
+        """controllers/フォルダからGradio機能を自動発見"""
+        gradio_functions = {}
+        controllers_path = self.project_root / "controllers"
+        
+        if not controllers_path.exists():
+            return gradio_functions
             
-    except Exception as e:
-        print(f"❌ Error executing command: {e}")
-
-if __name__ == "__main__":
-    main()
+        for item in controllers_path.iterdir():
+            if item.is_dir() and item.name.startswith("gra_"):
+                # gra_01_chat -> chat
+                function_name = item.name.split("_", 2)[-1] if "_" in item.name else item.name
+                gradio_functions[function_name] = {
+                    "path": item,
+                    "name": function_name,
+                    "directory": item.name
+                }
+        
+        return gradio_functions
+    
+    def handle(self, function_name=None, verbose=False, fix=False, *args, **kwargs):
+        """Gradioテストのメイン処理"""
+        print("🧪 Gradio機能テスト開始...")
+        print(f"📡 テスト対象URL: {self.base_url}")
+        print("=" * 50)
+        
+        if function_name:
+            # 個別機能テスト
+            result = self._test_single_function(function_name, verbose, fix)
+            return result
+        else:
+            # 全機能テスト
+            return self._test_all_functions(verbose, fix)
+    
+    def _test_single_function(self, function_name, verbose=False, fix=False):
+        """単一Gradio機能のテスト"""
+        if function_name not in self.gradio_functions:
+            print(f"❌ 機能 '{function_name}' が見つかりません")
+            print(f"🔍 利用可能な機能: {list(self.gradio_functions.keys())}")
+            return False
+            
+        function_info = self.gradio_functions[function_name]
+        print(f"🧪 {function_name} 機能をテスト中...")
+        
+        # テスト実行
+        result = self._run_gradio_test(function_info, verbose)
+        
+        if not result and fix:
+            print(f"🔧 {function_name} の自動修正を試行中...")
+            self._attempt_fix(function_info)
+            
+        return result
+    
+    def _test_all_functions(self, verbose=False, fix=False):
+        """全Gradio機能のテスト"""
+        results = {}
+        total_functions = len(self.gradio_functions)
+        passed_functions = 0
+        
+        for function_name, function_info in self.gradio_functions.items():
+            print(f"🧪 {function_name} 機能をテスト中...")
+            result = self._run_gradio_test(function_info, verbose)
+            results[function_name] = result
+            
+            if result:
+                passed_functions += 1
+            elif fix:

@@ -246,3 +246,22 @@ vendor/dify-setup/dify
 **/pgdata/
 **/pg_wal/
 *.rdb
+
+# Large files that should not be tracked
+# PostgreSQL WAL files (Write-Ahead Logging)
+dify-setup/dify/docker/volumes/db/data/pg_wal/
+dify-setup/dify/docker/volumes/db/data/pgdata/
+dify-setup/dify/docker/volumes/db/
+dify-setup/dify/docker/volumes/
+
+# Large binary files
+vendor/simple_ai_env/bin/ruff
+vendor/simple_ai_env/bin/
+vendor/simple_ai_env/
+
+# Redis data files
+dify-setup/dify/docker/volumes/redis/data/dump.rdb
+dify-setup/dify/docker/volumes/redis/
+
+# Docker volumes (should not be in version control)
+**/docker/volumes/
