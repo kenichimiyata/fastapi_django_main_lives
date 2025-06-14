@@ -103,21 +103,12 @@ setup_webhook_routes(app)
 # データベースルートの設定
 setup_database_routes(app)
 
-# テンプレートディレクトリの条件付きマウント
-import os
-templates_dir = "resources/views"  # Laravel構造に合わせて resources/views を使用
-if os.path.exists(templates_dir):
-    app.mount("/templates", StaticFiles(directory=templates_dir), name="templates")
-    print(f"✅ テンプレートディレクトリを {templates_dir} からマウントしました")
-else:
+# テンプレートディレクトリの確認
+templates_dir = "templates"
+if not os.path.exists(templates_dir):
     print(f"⚠️  警告: {templates_dir} ディレクトリが存在しません")
-
-# テンプレートファイルが格納されているディレクトリを指定
-templates = Jinja2Templates(directory=templates_dir if os.path.exists(templates_dir) else ".")
-
-#@app.get("/tests")
-##def get_some_page(request: Request):
-#    return templates.TemplateResponse("welcome.html", {"request": request})
+else:
+    print(f"✅ テンプレートディレクトリ {templates_dir} を使用しています")
 
 
 # Gradioインターフェースを Laravel風Controller経由でマウント
