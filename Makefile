@@ -7,7 +7,7 @@ COLOR_CYAN=\033[1;36m
 COLOR_GREEN=\033[1;32m
 
 # Defines the targets help, install, dev-install, and run as phony targets.
-.PHONY: help install run dev debug app server test clean requirements ci-test ci-quick ci-full stop-port gui gui-stop gui-logs gui-restart gui-simple
+.PHONY: help install run dev debug app server test clean requirements ci-test ci-quick ci-full stop-port gui gui-auto gui-stop gui-logs gui-restart gui-simple
 
 #sets the default goal to help when no target is specified on the command line.
 .DEFAULT_GOAL := help
@@ -27,8 +27,8 @@ help:
 	@echo "  app            	Run the main FastAPI application (app.py) - auto stops port 7860"
 	@echo "  dev            	Run the application in development mode with hot reload - auto stops port 7860"
 	@echo "  debug          	Run the application in debug mode (no reload) - auto stops port 7860"
-	@echo "  server         	Run the ASGI server directly with uvicorn - auto stops port 7860"
-	@echo "  gui            	Start AI GUI Desktop Environment (http://localhost:6080)"
+	@echo "  server         	Run the ASGI server directly with uvicorn - auto stops port 7860"	@echo "  gui            	Start AI GUI Desktop Environment (http://localhost:6080)"
+	@echo "  gui-auto       	Auto-start GUI with browser launch"
 	@echo "  gui-simple     	Start simple GUI environment (http://localhost:6081)"
 	@echo "  gui-stop       	Stop GUI Desktop Environment"
 	@echo "  gui-restart    	Restart GUI Desktop Environment"
@@ -166,6 +166,10 @@ gui:
 	@echo -e "$(COLOR_GREEN)VNC direct access: localhost:5901$(COLOR_RESET)"
 	@echo -e "$(COLOR_GREEN)Default credentials: copilot/copilot$(COLOR_RESET)"
 	docker-compose -f docker-ai-gui-desktop.yml up -d
+
+gui-auto:
+	@echo -e "$(COLOR_CYAN)Auto-starting GUI with browser launch...$(COLOR_RESET)"
+	./scripts/start_gui_auto.sh
 
 gui-stop:
 	@echo -e "$(COLOR_CYAN)Stopping GUI Desktop Environment...$(COLOR_RESET)"
